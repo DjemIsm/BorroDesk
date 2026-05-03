@@ -1,0 +1,17 @@
+# Build output
+bin/
+obj/
+
+# IDE and editor state
+.vs/
+.vscode/.vs/
+
+# Frontend dependencies and generated output
+node_modules/
+dist/
+build/
+
+# Local environment files
+.env
+.env.*
+!.env.example
