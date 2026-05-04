@@ -1,0 +1,53 @@
+<div class="app-shell">
+  <aside class="app-sidebar" aria-label="Application navigation">
+    <a class="app-brand" routerLink="/app/dashboard">
+      <span class="app-brand-mark" aria-hidden="true">BD</span>
+      <span>
+        <strong>BorroDesk</strong>
+        <small>Service desk</small>
+      </span>
+    </a>
+
+    <nav class="app-nav">
+      @for (item of navigation(); track item.route) {
+        <a
+          [routerLink]="item.route"
+          routerLinkActive="is-active"
+          [routerLinkActiveOptions]="{ exact: true }"
+        >
+          <span>{{ item.label }}</span>
+          <small>{{ item.description }}</small>
+        </a>
+      }
+    </nav>
+
+    @if (session(); as currentSession) {
+      <div class="sidebar-session">
+        <span class="avatar" aria-hidden="true">{{ userLabel().slice(0, 1).toUpperCase() }}</span>
+        <div>
+          <strong>{{ userLabel() }}</strong>
+          <small>{{ roleLabel() }}</small>
+          <small>{{ currentSession.email }}</small>
+        </div>
+      </div>
+    }
+  </aside>
+
+  <section class="app-workspace">
+    <header class="app-topbar">
+      <div>
+        <p class="workspace-eyebrow">Workspace</p>
+        <h1>Operations console</h1>
+      </div>
+
+      <div class="topbar-actions">
+        @if (session(); as currentSession) {
+          <span class="profile-chip">{{ currentSession.roles.join(', ') }}</span>
+        }
+        <button class="text-button" type="button" (click)="signOut()">Sign out</button>
+      </div>
+    </header>
+
+    <router-outlet />
+  </section>
+</div>

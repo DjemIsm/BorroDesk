@@ -1,6 +1,14 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { Observable, tap } from 'rxjs';
+
+export type ApplicationRole = 'User' | 'Support' | 'Admin';
+
+export const applicationRoles = {
+  user: 'User',
+  support: 'Support',
+  admin: 'Admin'
+} as const;
 
 export interface LoginRequest {
   email: string;
@@ -14,7 +22,7 @@ export interface LoginResponse {
   userId: number;
   userName: string | null;
   email: string | null;
-  roles: string[];
+  roles: ApplicationRole[];
 }
 
 @Injectable({
@@ -23,14 +31,61 @@ export interface LoginResponse {
 export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly storageKey = 'borrodesk.auth';
+  private readonly sessionState = signal<LoginResponse | null>(this.readStoredSession());
 
-  login(request: LoginRequest): Observable<LoginResponse> {
+  readonly session = this.sessionState.asReadonly();
+  readonly isAuthenticated = computed(() => this.isSessionActive(this.sessionState()));
+
+  login(request: LoginRequest, persistSession = true): Observable<LoginResponse> {
     return this.http.post<LoginResponse>('/api/auth/login', request).pipe(
-      tap((response) => this.saveSession(response))
+      tap((response) => this.setSession(response, persistSession))
     );
   }
 
   getSession(): LoginResponse | null {
+    const currentSession = this.sessionState();
+    if (!this.isSessionActive(currentSession)) {
+      this.clearSession();
+      return null;
+    }
+
+    return currentSession;
+  }
+
+  hasAnyRole(roles: readonly ApplicationRole[] = []): boolean {
+    if (roles.length === 0) {
+      return true;
+    }
+
+    const currentSession = this.getSession();
+    if (!currentSession) {
+      return false;
+    }
+
+    return roles.some((role) => currentSession.roles.includes(role));
+  }
+
+  clearSession(): void {
+    this.sessionState.set(null);
+    this.getLocalStorage()?.removeItem(this.storageKey);
+  }
+
+  private setSession(response: LoginResponse, persistSession: boolean): void {
+    this.sessionState.set(response);
+
+    const storage = this.getLocalStorage();
+    if (!storage) {
+      return;
+    }
+
+    if (persistSession) {
+      storage.setItem(this.storageKey, JSON.stringify(response));
+    } else {
+      storage.removeItem(this.storageKey);
+    }
+  }
+
+  private readStoredSession(): LoginResponse | null {
     const storage = this.getLocalStorage();
     if (!storage) {
       return null;
@@ -42,19 +97,25 @@ export class AuthService {
     }
 
     try {
-      return JSON.parse(storedValue) as LoginResponse;
+      const parsedSession = JSON.parse(storedValue) as LoginResponse;
+      if (!this.isSessionActive(parsedSession)) {
+        storage.removeItem(this.storageKey);
+        return null;
+      }
+
+      return parsedSession;
     } catch {
       storage.removeItem(this.storageKey);
       return null;
     }
   }
 
-  clearSession(): void {
-    this.getLocalStorage()?.removeItem(this.storageKey);
-  }
+  private isSessionActive(session: LoginResponse | null): boolean {
+    if (!session) {
+      return false;
+    }
 
-  private saveSession(response: LoginResponse): void {
-    this.getLocalStorage()?.setItem(this.storageKey, JSON.stringify(response));
+    return Date.parse(session.expiresAt) > Date.now();
   }
 
   private getLocalStorage(): Storage | null {

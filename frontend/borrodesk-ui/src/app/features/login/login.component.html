@@ -95,7 +95,10 @@
             </div>
           </dl>
 
-          <button class="secondary-button" type="button" (click)="signOut()">Sign out</button>
+          <div class="button-row">
+            <button class="primary-button" type="button" (click)="openWorkspace()">Open workspace</button>
+            <button class="secondary-button" type="button" (click)="signOut()">Sign out</button>
+          </div>
         </div>
       } @else {
         <div class="panel-heading">
