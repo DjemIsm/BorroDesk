@@ -1,0 +1,166 @@
+<main class="login-page">
+  <section class="brand-panel" aria-label="BorroDesk workspace preview">
+    <div class="brand-header">
+      <span class="brand-mark" aria-hidden="true">BD</span>
+      <div>
+        <p class="eyebrow">Support operations</p>
+        <h1>BorroDesk</h1>
+      </div>
+    </div>
+
+    <div class="workspace-preview" aria-hidden="true">
+      <div class="preview-topbar">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+
+      <div class="preview-grid">
+        <div class="ticket-list">
+          <div class="ticket-row high">
+            <span class="priority"></span>
+            <div>
+              <strong>Payment receipt missing</strong>
+              <small>Assigned to Finance</small>
+            </div>
+            <b>12m</b>
+          </div>
+          <div class="ticket-row">
+            <span class="priority"></span>
+            <div>
+              <strong>New hardware request</strong>
+              <small>Waiting on approval</small>
+            </div>
+            <b>28m</b>
+          </div>
+          <div class="ticket-row">
+            <span class="priority"></span>
+            <div>
+              <strong>Account access review</strong>
+              <small>Security queue</small>
+            </div>
+            <b>1h</b>
+          </div>
+        </div>
+
+        <div class="queue-panel">
+          <span class="queue-number">18</span>
+          <span>Open queue</span>
+          <div class="queue-bars">
+            <i></i>
+            <i></i>
+            <i></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="status-strip" aria-hidden="true">
+      <div>
+        <strong>42</strong>
+        <span>Tickets today</span>
+      </div>
+      <div>
+        <strong>7</strong>
+        <span>Escalated</span>
+      </div>
+      <div>
+        <strong>96%</strong>
+        <span>SLA met</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="auth-panel" aria-labelledby="login-title">
+    <div class="auth-card">
+      @if (session(); as currentSession) {
+        <div class="signed-in">
+          <span class="success-dot" aria-hidden="true"></span>
+          <p class="eyebrow">Active session</p>
+          <h2 id="login-title">Signed in</h2>
+          <p class="session-user">{{ userLabel() }}</p>
+
+          <dl>
+            <div>
+              <dt>Email</dt>
+              <dd>{{ currentSession.email || 'Not provided' }}</dd>
+            </div>
+            <div>
+              <dt>Roles</dt>
+              <dd>{{ currentSession.roles.join(', ') || 'No roles' }}</dd>
+            </div>
+            <div>
+              <dt>Token expiry</dt>
+              <dd>{{ currentSession.expiresAt }}</dd>
+            </div>
+          </dl>
+
+          <button class="secondary-button" type="button" (click)="signOut()">Sign out</button>
+        </div>
+      } @else {
+        <div class="panel-heading">
+          <p class="eyebrow">Agent access</p>
+          <h2 id="login-title">Sign in</h2>
+          <p>Use your BorroDesk account to access the workspace.</p>
+        </div>
+
+        <form [formGroup]="loginForm" (ngSubmit)="submit()" novalidate>
+          <div class="field">
+            <label for="email">Email</label>
+            <input
+              id="email"
+              type="email"
+              formControlName="email"
+              autocomplete="username"
+              placeholder="agent@borrodesk.local"
+              [class.is-invalid]="loginForm.controls.email.invalid && loginForm.controls.email.touched"
+            />
+            @if (loginForm.controls.email.invalid && loginForm.controls.email.touched) {
+              <p class="field-error">Enter a valid email address.</p>
+            }
+          </div>
+
+          <div class="field">
+            <label for="password">Password</label>
+            <div class="password-field">
+              <input
+                id="password"
+                [type]="showPassword() ? 'text' : 'password'"
+                formControlName="password"
+                autocomplete="current-password"
+                placeholder="Password"
+                [class.is-invalid]="loginForm.controls.password.invalid && loginForm.controls.password.touched"
+              />
+              <button
+                class="toggle-button"
+                type="button"
+                aria-controls="password"
+                [attr.aria-pressed]="showPassword()"
+                (click)="togglePasswordVisibility()"
+              >
+                {{ showPassword() ? 'Hide' : 'Show' }}
+              </button>
+            </div>
+            @if (loginForm.controls.password.invalid && loginForm.controls.password.touched) {
+              <p class="field-error">Enter your password.</p>
+            }
+          </div>
+
+          <label class="check-line">
+            <input type="checkbox" formControlName="rememberMe" />
+            <span>Keep me signed in</span>
+          </label>
+
+          @if (errorMessage()) {
+            <p class="form-error" role="alert">{{ errorMessage() }}</p>
+          }
+
+          <button class="primary-button" type="submit" [disabled]="isSubmitting()">
+            <span>{{ isSubmitting() ? 'Signing in' : 'Sign in' }}</span>
+            <span aria-hidden="true">-&gt;</span>
+          </button>
+        </form>
+      }
+    </div>
+  </section>
+</main>
