@@ -6,7 +6,7 @@
     </div>
     <div class="page-actions">
       <span class="status-badge">{{ resultSummary() }}</span>
-      <button class="action-button" type="button">New ticket</button>
+      <a class="action-button" routerLink="/app/tickets/new">New ticket</a>
     </div>
   </section>
 
@@ -108,7 +108,7 @@
             <span>{{ ticket.createdAt | date: 'mediumDate' }}</span>
             <span class="row-actions">
               @if (ticket.canEdit) {
-                <button class="row-action" type="button">Edit</button>
+                <a class="row-action" [routerLink]="['/app/tickets', ticket.id, 'edit']">Edit</a>
               }
               @if (ticket.canAssign) {
                 <button class="row-action" type="button">Assign</button>

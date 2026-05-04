@@ -5,6 +5,7 @@ import { DashboardPageComponent } from './features/workspace/dashboard/dashboard
 import { ForbiddenPageComponent } from './features/workspace/forbidden/forbidden-page.component';
 import { AdminUsersPageComponent } from './features/workspace/admin-users/admin-users-page.component';
 import { TeamQueuePageComponent } from './features/workspace/team-queue/team-queue-page.component';
+import { TicketFormPageComponent } from './features/workspace/tickets/ticket-form/ticket-form-page.component';
 import { MyTicketsPageComponent } from './features/workspace/tickets/my-tickets-page.component';
 import { TicketsPageComponent } from './features/workspace/tickets/tickets-page.component';
 import { LoginComponent } from './features/login/login.component';
@@ -36,6 +37,24 @@ export const routes: Routes = [
           roles: [applicationRoles.user, applicationRoles.support, applicationRoles.admin]
         },
         title: 'Tickets | BorroDesk'
+      },
+      {
+        path: 'tickets/new',
+        canActivate: [roleGuard],
+        component: TicketFormPageComponent,
+        data: {
+          roles: [applicationRoles.user, applicationRoles.support, applicationRoles.admin]
+        },
+        title: 'Create ticket | BorroDesk'
+      },
+      {
+        path: 'tickets/:id/edit',
+        canActivate: [roleGuard],
+        component: TicketFormPageComponent,
+        data: {
+          roles: [applicationRoles.user, applicationRoles.support, applicationRoles.admin]
+        },
+        title: 'Edit ticket | BorroDesk'
       },
       {
         path: 'my-tickets',

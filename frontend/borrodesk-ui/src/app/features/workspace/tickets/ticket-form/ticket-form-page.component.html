@@ -1,0 +1,86 @@
+<main class="workspace-page">
+  <section class="page-heading">
+    <div>
+      <p class="workspace-eyebrow">{{ isEditMode() ? 'Ticket update' : 'New request' }}</p>
+      <h2>{{ pageTitle() }}</h2>
+    </div>
+    <a class="text-button link-button" routerLink="/app/tickets">Back to tickets</a>
+  </section>
+
+  @if (errorMessage()) {
+    <p class="form-error" role="alert">{{ errorMessage() }}</p>
+  }
+
+  <form class="workspace-card ticket-editor" [formGroup]="ticketForm" (ngSubmit)="submit()" novalidate>
+    @if (isLoading()) {
+      <div class="table-empty">
+        <strong>Loading ticket</strong>
+        <span>Fetching the current ticket details.</span>
+      </div>
+    } @else {
+      <div class="editor-grid">
+        <div class="field title-field">
+          <label for="ticket-title">Title</label>
+          <input
+            id="ticket-title"
+            type="text"
+            formControlName="title"
+            maxlength="200"
+            placeholder="Briefly describe the issue"
+            [class.is-invalid]="ticketForm.controls.title.invalid && ticketForm.controls.title.touched"
+          />
+          @if (ticketForm.controls.title.invalid && ticketForm.controls.title.touched) {
+            <p class="field-error">{{ titleError() }}</p>
+          }
+        </div>
+
+        <div class="field">
+          <label for="ticket-priority">Priority</label>
+          <select id="ticket-priority" formControlName="priority">
+            @for (priority of priorityOptions; track priority.value) {
+              <option [value]="priority.value">{{ priority.label }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="field description-field">
+          <label for="ticket-description">Description</label>
+          <textarea
+            id="ticket-description"
+            formControlName="description"
+            rows="10"
+            placeholder="Add the details needed to resolve this request"
+            [class.is-invalid]="ticketForm.controls.description.invalid && ticketForm.controls.description.touched"
+          ></textarea>
+          @if (ticketForm.controls.description.invalid && ticketForm.controls.description.touched) {
+            <p class="field-error">Enter a ticket description.</p>
+          }
+        </div>
+      </div>
+
+      @if (ticket(); as currentTicket) {
+        <aside class="ticket-form-summary" aria-label="Ticket details">
+          <div>
+            <span>Status</span>
+            <strong>{{ statusLabel(currentTicket.status) }}</strong>
+          </div>
+          <div>
+            <span>Created by</span>
+            <strong>{{ currentTicket.createdBy.userName || currentTicket.createdBy.email || 'Unknown user' }}</strong>
+          </div>
+          <div>
+            <span>Assigned to</span>
+            <strong>{{ currentTicket.assignedTo?.userName || currentTicket.assignedTo?.email || 'Unassigned' }}</strong>
+          </div>
+        </aside>
+      }
+
+      <div class="editor-actions">
+        <button class="action-button" type="submit" [disabled]="isSaving() || ticketForm.disabled">
+          {{ submitLabel() }}
+        </button>
+        <a class="text-button link-button" routerLink="/app/tickets">Cancel</a>
+      </div>
+    }
+  </form>
+</main>

@@ -17,7 +17,8 @@ body {
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 
@@ -603,7 +604,10 @@ a {
 }
 
 .text-button {
+  display: inline-flex;
   min-height: 36px;
+  align-items: center;
+  justify-content: center;
   border: 1px solid #cbd7d3;
   border-radius: 8px;
   background: #ffffff;
@@ -942,6 +946,107 @@ a {
   opacity: 0.55;
 }
 
+.link-button {
+  padding: 0 12px;
+}
+
+.ticket-editor {
+  gap: 22px;
+}
+
+.editor-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  gap: 18px;
+}
+
+.title-field,
+.description-field {
+  grid-column: 1 / -1;
+}
+
+.ticket-editor .field {
+  align-content: start;
+}
+
+.ticket-editor label {
+  color: #40504a;
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.ticket-editor input,
+.ticket-editor select,
+.ticket-editor textarea {
+  width: 100%;
+  border: 1px solid #b8c5c0;
+  border-radius: 8px;
+  background: #fbfcfb;
+  color: #18211f;
+  outline: none;
+}
+
+.ticket-editor input,
+.ticket-editor select {
+  height: 44px;
+  padding: 0 12px;
+}
+
+.ticket-editor textarea {
+  min-height: 220px;
+  resize: vertical;
+  padding: 12px;
+}
+
+.ticket-editor input:focus,
+.ticket-editor select:focus,
+.ticket-editor textarea:focus {
+  border-color: #1f766b;
+  box-shadow: 0 0 0 3px rgba(47, 133, 120, 0.18);
+}
+
+.ticket-editor .is-invalid {
+  border-color: #ba3f2d;
+}
+
+.ticket-form-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  border-top: 1px solid #e0e7e4;
+  padding-top: 18px;
+}
+
+.ticket-form-summary div {
+  display: grid;
+  gap: 4px;
+  border: 1px solid #e0e7e4;
+  border-radius: 8px;
+  background: #fbfcfb;
+  padding: 12px;
+}
+
+.ticket-form-summary span {
+  color: #66756f;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.ticket-form-summary strong {
+  overflow: hidden;
+  color: #18211f;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.editor-actions {
+  display: flex;
+  gap: 10px;
+  border-top: 1px solid #e0e7e4;
+  padding-top: 18px;
+}
+
 .empty-state {
   display: grid;
   max-width: 560px;
@@ -1044,13 +1149,21 @@ a {
 
   .page-actions,
   .filter-actions,
+  .editor-actions,
   .pagination-bar,
   .pagination-actions {
     align-items: stretch;
     flex-direction: column;
   }
 
-  .ticket-filters {
+  .ticket-filters,
+  .editor-grid,
+  .ticket-form-summary {
     grid-template-columns: 1fr;
+  }
+
+  .title-field,
+  .description-field {
+    grid-column: auto;
   }
 }

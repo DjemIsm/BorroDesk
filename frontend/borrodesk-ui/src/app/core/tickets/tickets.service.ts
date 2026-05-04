@@ -38,6 +38,45 @@ export interface TicketSummaryResponse {
   canDelete: boolean;
 }
 
+export interface TicketCommentResponse {
+  id: number;
+  ticketId: number;
+  author: TicketUserResponse;
+  text: string;
+  createdAt: string;
+  updatedAt: string | null;
+}
+
+export interface TicketAttachmentResponse {
+  id: number;
+  ticketId: number;
+  uploadedBy: TicketUserResponse;
+  fileName: string;
+  storedFileName: string;
+  contentType: string | null;
+  fileSizeBytes: number;
+  uploadedAt: string;
+}
+
+export interface TicketResponse extends TicketSummaryResponse {
+  description: string;
+  availableStatusTransitions: TicketStatus[];
+  comments: TicketCommentResponse[];
+  attachments: TicketAttachmentResponse[];
+}
+
+export interface CreateTicketRequest {
+  title: string;
+  description: string;
+  priority: TicketPriority;
+}
+
+export interface UpdateTicketRequest {
+  title: string;
+  description: string;
+  priority: TicketPriority;
+}
+
 export interface PagedResponse<T> {
   items: T[];
   pageNumber: number;
@@ -68,6 +107,18 @@ export class TicketsService {
     return this.http.get<PagedResponse<TicketSummaryResponse>>('/api/tickets', {
       params: this.toHttpParams(query)
     });
+  }
+
+  getTicket(id: number): Observable<TicketResponse> {
+    return this.http.get<TicketResponse>(`/api/tickets/${id}`);
+  }
+
+  createTicket(request: CreateTicketRequest): Observable<TicketResponse> {
+    return this.http.post<TicketResponse>('/api/tickets', request);
+  }
+
+  updateTicket(id: number, request: UpdateTicketRequest): Observable<TicketResponse> {
+    return this.http.put<TicketResponse>(`/api/tickets/${id}`, request);
   }
 
   private toHttpParams(query: TicketQuery): HttpParams {
