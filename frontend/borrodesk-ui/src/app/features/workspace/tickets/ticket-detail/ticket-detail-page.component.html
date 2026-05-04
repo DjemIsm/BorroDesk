@@ -1,0 +1,174 @@
+<main class="workspace-page">
+  <section class="page-heading">
+    <div>
+      <p class="workspace-eyebrow">Ticket detail</p>
+      <h2>{{ ticket()?.title || 'Ticket' }}</h2>
+    </div>
+    <div class="page-actions">
+      @if (ticket()?.canEdit) {
+        <a class="action-button" [routerLink]="['/app/tickets', ticket()?.id, 'edit']">Edit ticket</a>
+      }
+      <a class="text-button link-button" routerLink="/app/tickets">Back to tickets</a>
+    </div>
+  </section>
+
+  @if (detailError()) {
+    <p class="form-error" role="alert">{{ detailError() }}</p>
+  }
+
+  @if (isLoading()) {
+    <section class="workspace-card">
+      <div class="table-empty">
+        <strong>Loading ticket</strong>
+        <span>Fetching ticket activity and attachments.</span>
+      </div>
+    </section>
+  } @else if (ticket(); as currentTicket) {
+    <section class="ticket-detail-grid">
+      <article class="workspace-card ticket-detail-main">
+        <div class="detail-header">
+          <div>
+            <p class="workspace-eyebrow">#{{ currentTicket.id }}</p>
+            <h3>{{ currentTicket.title }}</h3>
+          </div>
+          <div class="detail-badges">
+            <mark [class]="statusClass(currentTicket.status)">{{ statusLabel(currentTicket.status) }}</mark>
+            <mark [class]="priorityClass(currentTicket.priority)">{{ priorityLabel(currentTicket.priority) }}</mark>
+          </div>
+        </div>
+
+        <p class="ticket-description">{{ currentTicket.description }}</p>
+
+        <div class="detail-meta-grid">
+          <div>
+            <span>Created by</span>
+            <strong>{{ userLabel(currentTicket.createdBy) }}</strong>
+          </div>
+          <div>
+            <span>Assigned to</span>
+            <strong>{{ userLabel(currentTicket.assignedTo) }}</strong>
+          </div>
+          <div>
+            <span>Created</span>
+            <strong>{{ currentTicket.createdAt | date: 'medium' }}</strong>
+          </div>
+          <div>
+            <span>Updated</span>
+            <strong>{{ currentTicket.updatedAt ? (currentTicket.updatedAt | date: 'medium') : 'No updates' }}</strong>
+          </div>
+        </div>
+      </article>
+
+      <aside class="workspace-card ticket-side-panel">
+        <h3>Allowed actions</h3>
+        <div class="permission-list">
+          <span [class.is-enabled]="currentTicket.canEdit">Edit ticket</span>
+          <span [class.is-enabled]="currentTicket.canAssign">Assign ticket</span>
+          <span [class.is-enabled]="currentTicket.canDelete">Delete ticket</span>
+        </div>
+      </aside>
+    </section>
+
+    <section class="ticket-activity-grid">
+      <article class="workspace-card comments-panel">
+        <div class="table-toolbar">
+          <h3>Comments</h3>
+          <span class="status-badge">{{ currentTicket.comments.length }} total</span>
+        </div>
+
+        <form class="comment-form" [formGroup]="commentForm" (ngSubmit)="submitComment()" novalidate>
+          <label for="ticket-comment">Add comment</label>
+          <textarea
+            id="ticket-comment"
+            formControlName="text"
+            rows="4"
+            placeholder="Write an update for this ticket"
+            [class.is-invalid]="commentForm.controls.text.invalid && commentForm.controls.text.touched"
+          ></textarea>
+          @if (commentForm.controls.text.invalid && commentForm.controls.text.touched) {
+            <p class="field-error">Enter a comment before posting.</p>
+          }
+          @if (commentError()) {
+            <p class="form-error" role="alert">{{ commentError() }}</p>
+          }
+          <button class="action-button" type="submit" [disabled]="isPostingComment()">Post comment</button>
+        </form>
+
+        <div class="comment-list">
+          @if (currentTicket.comments.length > 0) {
+            @for (comment of currentTicket.comments; track trackComment($index, comment)) {
+              <article class="comment-item">
+                <div class="comment-avatar" aria-hidden="true">
+                  {{ userLabel(comment.author).slice(0, 1).toUpperCase() }}
+                </div>
+                <div>
+                  <header>
+                    <strong>{{ userLabel(comment.author) }}</strong>
+                    <span>{{ comment.createdAt | date: 'medium' }}</span>
+                  </header>
+                  <p>{{ comment.text }}</p>
+                </div>
+              </article>
+            }
+          } @else {
+            <div class="empty-inline">
+              <strong>No comments yet</strong>
+              <span>Post the first update for this ticket.</span>
+            </div>
+          }
+        </div>
+      </article>
+
+      <article class="workspace-card attachments-panel">
+        <div class="table-toolbar">
+          <h3>Attachments</h3>
+          <span class="status-badge">{{ currentTicket.attachments.length }} total</span>
+        </div>
+
+        <div class="attachment-upload">
+          <label for="ticket-attachment">Upload screenshot</label>
+          <div class="file-picker">
+            <input id="ticket-attachment" type="file" (change)="selectAttachment($event)" />
+            <span>{{ selectedFileLabel() }}</span>
+            <button class="action-button" type="button" [disabled]="isUploadingAttachment()" (click)="uploadAttachment()">
+              Upload
+            </button>
+          </div>
+          @if (attachmentError()) {
+            <p class="form-error" role="alert">{{ attachmentError() }}</p>
+          }
+        </div>
+
+        <div class="attachment-list">
+          @if (currentTicket.attachments.length > 0) {
+            @for (attachment of currentTicket.attachments; track trackAttachment($index, attachment)) {
+              <article class="attachment-item">
+                <div>
+                  <strong>{{ attachment.fileName }}</strong>
+                  <span>
+                    {{ fileSizeLabel(attachment.fileSizeBytes) }}
+                    · uploaded by {{ userLabel(attachment.uploadedBy) }}
+                    · {{ attachment.uploadedAt | date: 'mediumDate' }}
+                  </span>
+                </div>
+                <button
+                  class="text-button"
+                  type="button"
+                  [disabled]="isDownloadingAttachmentId() === attachment.id"
+                  (click)="downloadAttachment(attachment)"
+                >
+                  Download
+                </button>
+              </article>
+            }
+          } @else {
+            <div class="empty-inline">
+              <strong>No attachments</strong>
+              <span>Upload screenshots or supporting images.</span>
+            </div>
+          }
+        </div>
+      </article>
+    </section>
+  }
+</main>

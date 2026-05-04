@@ -77,6 +77,10 @@ export interface UpdateTicketRequest {
   priority: TicketPriority;
 }
 
+export interface CreateTicketCommentRequest {
+  text: string;
+}
+
 export interface PagedResponse<T> {
   items: T[];
   pageNumber: number;
@@ -119,6 +123,24 @@ export class TicketsService {
 
   updateTicket(id: number, request: UpdateTicketRequest): Observable<TicketResponse> {
     return this.http.put<TicketResponse>(`/api/tickets/${id}`, request);
+  }
+
+  addTicketComment(id: number, request: CreateTicketCommentRequest): Observable<TicketCommentResponse> {
+    return this.http.post<TicketCommentResponse>(`/api/tickets/${id}/comments`, request);
+  }
+
+  uploadTicketAttachment(id: number, file: File): Observable<TicketAttachmentResponse> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    return this.http.post<TicketAttachmentResponse>(`/api/tickets/${id}/attachments`, formData);
+  }
+
+  getTicketAttachment(id: number, attachmentId: number, download = true): Observable<Blob> {
+    return this.http.get(`/api/tickets/${id}/attachments/${attachmentId}`, {
+      params: new HttpParams().set('download', download),
+      responseType: 'blob'
+    });
   }
 
   private toHttpParams(query: TicketQuery): HttpParams {

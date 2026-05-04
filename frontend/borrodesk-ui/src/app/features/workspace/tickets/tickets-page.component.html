@@ -96,8 +96,12 @@
       } @else if (tickets().length > 0) {
         @for (ticket of tickets(); track ticket.id) {
           <div class="ticket-table-row">
-            <span>#{{ ticket.id }}</span>
-            <span class="ticket-title-cell">{{ ticket.title }}</span>
+            <span>
+              <a class="table-link" [routerLink]="['/app/tickets', ticket.id]">#{{ ticket.id }}</a>
+            </span>
+            <span class="ticket-title-cell">
+              <a class="table-link" [routerLink]="['/app/tickets', ticket.id]">{{ ticket.title }}</a>
+            </span>
             <span>
               <mark [class]="statusClass(ticket.status)">{{ statusLabel(ticket.status) }}</mark>
             </span>
@@ -107,6 +111,7 @@
             <span>{{ userLabel(ticket.assignedTo) }}</span>
             <span>{{ ticket.createdAt | date: 'mediumDate' }}</span>
             <span class="row-actions">
+              <a class="row-action" [routerLink]="['/app/tickets', ticket.id]">View</a>
               @if (ticket.canEdit) {
                 <a class="row-action" [routerLink]="['/app/tickets', ticket.id, 'edit']">Edit</a>
               }
