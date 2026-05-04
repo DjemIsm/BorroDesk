@@ -5,6 +5,8 @@ using BorroDesk.Api.Data;
 using BorroDesk.Api.DTOs.Tickets;
 using BorroDesk.Api.Entities;
 using BorroDesk.Api.Entities.Enums;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,9 +14,22 @@ namespace BorroDesk.Api.Services;
 
 public sealed class TicketService(
     BorroDeskDbContext dbContext,
-    UserManager<User> userManager) : ITicketService
+    UserManager<User> userManager,
+    IWebHostEnvironment appEnvironment) : ITicketService
 {
     private const int MaxPageSize = 100;
+    private const long MaxScreenshotFileSizeBytes = 5 * 1024 * 1024;
+    private const string UploadRootDirectory = "uploads";
+    private const string TicketAttachmentUploadDirectory = "ticket-attachments";
+
+    private static readonly IReadOnlyDictionary<string, string> AllowedScreenshotContentTypes =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            [".png"] = "image/png",
+            [".jpg"] = "image/jpeg",
+            [".jpeg"] = "image/jpeg",
+            [".webp"] = "image/webp"
+        };
 
     private static readonly IReadOnlyDictionary<TicketStatus, TicketStatus[]> StaffStatusTransitions =
         new Dictionary<TicketStatus, TicketStatus[]>
@@ -357,6 +372,124 @@ public sealed class TicketService(
         return TicketServiceResult<TicketCommentResponse>.Success(ToComment(createdComment));
     }
 
+    public async Task<TicketServiceResult<TicketAttachmentResponse>> UploadTicketScreenshotAsync(
+        ClaimsPrincipal user,
+        int ticketId,
+        IFormFile file,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetActor(user, out var actor))
+        {
+            return Unauthorized<TicketAttachmentResponse>();
+        }
+
+        var validationMessage = await ValidateScreenshotFileAsync(file, cancellationToken);
+        if (validationMessage is not null)
+        {
+            return BadRequest<TicketAttachmentResponse>(validationMessage);
+        }
+
+        var ticket = await dbContext.Tickets
+            .SingleOrDefaultAsync(ticket => ticket.Id == ticketId, cancellationToken);
+        if (ticket is null || !CanAccessTicket(ticket, actor))
+        {
+            return NotFound<TicketAttachmentResponse>();
+        }
+
+        var originalFileName = Path.GetFileName(file.FileName);
+        if (string.IsNullOrWhiteSpace(originalFileName))
+        {
+            originalFileName = "screenshot";
+        }
+
+        var extension = Path.GetExtension(originalFileName).ToLowerInvariant();
+        var storedFileName = $"{Guid.NewGuid():N}{extension}";
+        var uploadDirectory = GetTicketAttachmentUploadDirectory();
+        Directory.CreateDirectory(uploadDirectory);
+
+        var physicalPath = Path.Combine(uploadDirectory, storedFileName);
+        var relativePath = Path.Combine(UploadRootDirectory, TicketAttachmentUploadDirectory, storedFileName);
+
+        await using (var inputStream = file.OpenReadStream())
+        await using (var outputStream = System.IO.File.Create(physicalPath))
+        {
+            await inputStream.CopyToAsync(outputStream, cancellationToken);
+        }
+
+        var attachment = new TicketAttachment
+        {
+            TicketId = ticket.Id,
+            UploadedByUserId = actor.UserId,
+            FileName = originalFileName,
+            StoredFileName = storedFileName,
+            FilePath = relativePath,
+            ContentType = AllowedScreenshotContentTypes[extension],
+            FileSizeBytes = file.Length
+        };
+
+        ticket.UpdatedAt = DateTime.UtcNow;
+        dbContext.TicketAttachments.Add(attachment);
+
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch
+        {
+            if (System.IO.File.Exists(physicalPath))
+            {
+                System.IO.File.Delete(physicalPath);
+            }
+
+            throw;
+        }
+
+        var createdAttachment = await dbContext.TicketAttachments
+            .AsNoTracking()
+            .Include(ticketAttachment => ticketAttachment.UploadedByUser)
+            .SingleOrDefaultAsync(ticketAttachment => ticketAttachment.Id == attachment.Id, cancellationToken)
+            ?? throw new InvalidOperationException($"Created ticket attachment {attachment.Id} could not be loaded.");
+
+        return TicketServiceResult<TicketAttachmentResponse>.Success(ToAttachment(createdAttachment));
+    }
+
+    public async Task<TicketServiceResult<TicketAttachmentFileResponse>> GetTicketAttachmentFileAsync(
+        ClaimsPrincipal user,
+        int ticketId,
+        int attachmentId,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetActor(user, out var actor))
+        {
+            return Unauthorized<TicketAttachmentFileResponse>();
+        }
+
+        var attachment = await dbContext.TicketAttachments
+            .AsNoTracking()
+            .Include(ticketAttachment => ticketAttachment.Ticket)
+            .SingleOrDefaultAsync(
+                ticketAttachment => ticketAttachment.Id == attachmentId && ticketAttachment.TicketId == ticketId,
+                cancellationToken);
+
+        if (attachment?.Ticket is null || !CanAccessTicket(attachment.Ticket, actor))
+        {
+            return NotFound<TicketAttachmentFileResponse>();
+        }
+
+        var physicalPath = GetTicketAttachmentPhysicalPath(attachment.StoredFileName);
+        if (!System.IO.File.Exists(physicalPath))
+        {
+            return NotFound<TicketAttachmentFileResponse>();
+        }
+
+        return TicketServiceResult<TicketAttachmentFileResponse>.Success(new TicketAttachmentFileResponse
+        {
+            PhysicalPath = physicalPath,
+            FileName = attachment.FileName,
+            ContentType = attachment.ContentType ?? "application/octet-stream"
+        });
+    }
+
     public async Task<TicketServiceResult> DeleteTicketAsync(
         ClaimsPrincipal user,
         int id,
@@ -429,6 +562,8 @@ public sealed class TicketService(
             .Include(ticket => ticket.AssignedToUser)
             .Include(ticket => ticket.Comments)
                 .ThenInclude(comment => comment.User)
+            .Include(ticket => ticket.Attachments)
+                .ThenInclude(attachment => attachment.UploadedByUser)
             .SingleOrDefaultAsync(ticket => ticket.Id == id, cancellationToken);
     }
 
@@ -692,6 +827,11 @@ public sealed class TicketService(
                 .OrderBy(comment => comment.CreatedAt)
                 .ThenBy(comment => comment.Id)
                 .Select(ToComment)
+                .ToArray(),
+            Attachments = ticket.Attachments
+                .OrderBy(attachment => attachment.UploadedAt)
+                .ThenBy(attachment => attachment.Id)
+                .Select(ToAttachment)
                 .ToArray()
         };
     }
@@ -706,6 +846,21 @@ public sealed class TicketService(
             Text = comment.Comment,
             CreatedAt = comment.CreatedAt,
             UpdatedAt = comment.UpdatedAt
+        };
+    }
+
+    private static TicketAttachmentResponse ToAttachment(TicketAttachment attachment)
+    {
+        return new TicketAttachmentResponse
+        {
+            Id = attachment.Id,
+            TicketId = attachment.TicketId,
+            UploadedBy = ToUser(attachment.UploadedByUserId, attachment.UploadedByUser),
+            FileName = attachment.FileName,
+            StoredFileName = attachment.StoredFileName,
+            ContentType = attachment.ContentType,
+            FileSizeBytes = attachment.FileSizeBytes,
+            UploadedAt = attachment.UploadedAt
         };
     }
 
@@ -787,6 +942,94 @@ public sealed class TicketService(
 
         validationMessage = string.Empty;
         return true;
+    }
+
+    private static async Task<string?> ValidateScreenshotFileAsync(
+        IFormFile? file,
+        CancellationToken cancellationToken)
+    {
+        if (file is null)
+        {
+            return "Screenshot file is required.";
+        }
+
+        if (file.Length == 0)
+        {
+            return "Screenshot file cannot be empty.";
+        }
+
+        if (file.Length > MaxScreenshotFileSizeBytes)
+        {
+            return "Screenshot file cannot exceed 5 MB.";
+        }
+
+        var fileName = Path.GetFileName(file.FileName);
+        var extension = Path.GetExtension(fileName).ToLowerInvariant();
+        if (!AllowedScreenshotContentTypes.TryGetValue(extension, out var expectedContentType))
+        {
+            return "Only PNG, JPEG, and WebP screenshots are allowed.";
+        }
+
+        if (!string.Equals(file.ContentType, expectedContentType, StringComparison.OrdinalIgnoreCase))
+        {
+            return "Screenshot content type must match PNG, JPEG, or WebP.";
+        }
+
+        return await HasValidScreenshotSignatureAsync(file, extension, cancellationToken)
+            ? null
+            : "Screenshot file signature must match PNG, JPEG, or WebP.";
+    }
+
+    private static async Task<bool> HasValidScreenshotSignatureAsync(
+        IFormFile file,
+        string extension,
+        CancellationToken cancellationToken)
+    {
+        var header = new byte[12];
+        await using var stream = file.OpenReadStream();
+        var bytesRead = await stream.ReadAsync(header.AsMemory(0, header.Length), cancellationToken);
+
+        return extension switch
+        {
+            ".png" => HasPngSignature(header, bytesRead),
+            ".jpg" or ".jpeg" => HasJpegSignature(header, bytesRead),
+            ".webp" => HasWebpSignature(header, bytesRead),
+            _ => false
+        };
+    }
+
+    private static bool HasPngSignature(byte[] header, int bytesRead)
+    {
+        ReadOnlySpan<byte> pngSignature = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
+        return bytesRead >= pngSignature.Length && header.AsSpan(0, pngSignature.Length).SequenceEqual(pngSignature);
+    }
+
+    private static bool HasJpegSignature(byte[] header, int bytesRead)
+    {
+        return bytesRead >= 3 && header[0] == 0xFF && header[1] == 0xD8 && header[2] == 0xFF;
+    }
+
+    private static bool HasWebpSignature(byte[] header, int bytesRead)
+    {
+        return bytesRead >= 12
+            && header[0] == 'R'
+            && header[1] == 'I'
+            && header[2] == 'F'
+            && header[3] == 'F'
+            && header[8] == 'W'
+            && header[9] == 'E'
+            && header[10] == 'B'
+            && header[11] == 'P';
+    }
+
+    private string GetTicketAttachmentUploadDirectory()
+    {
+        return Path.Combine(appEnvironment.ContentRootPath, UploadRootDirectory, TicketAttachmentUploadDirectory);
+    }
+
+    private string GetTicketAttachmentPhysicalPath(string storedFileName)
+    {
+        return Path.Combine(GetTicketAttachmentUploadDirectory(), Path.GetFileName(storedFileName));
     }
 
     private static bool IsDefined<TEnum>(TEnum value)

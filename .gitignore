@@ -2,6 +2,7 @@
 bin/
 obj/
 .dotnet/
+backend/BorroDesk.Api/uploads/
 
 # IDE and editor state
 .vs/

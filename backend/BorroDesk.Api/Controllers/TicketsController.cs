@@ -117,6 +117,53 @@ public sealed class TicketsController(ITicketService ticketService) : Controller
         return CreatedAtAction(nameof(GetTicket), new { id }, result.Value);
     }
 
+    [HttpPost("{id:int}/attachments")]
+    [Consumes("multipart/form-data")]
+    [ProducesResponseType<TicketAttachmentResponse>(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<TicketAttachmentResponse>> UploadTicketScreenshot(
+        int id,
+        [FromForm] IFormFile file,
+        CancellationToken cancellationToken)
+    {
+        var result = await ticketService.UploadTicketScreenshotAsync(User, id, file, cancellationToken);
+        if (result.Status != TicketServiceResultStatus.Success || result.Value is null)
+        {
+            return ToActionResult(result);
+        }
+
+        return CreatedAtAction(
+            nameof(GetTicketAttachment),
+            new { id, attachmentId = result.Value.Id },
+            result.Value);
+    }
+
+    [HttpGet("{id:int}/attachments/{attachmentId:int}")]
+    [Produces("image/png", "image/jpeg", "image/webp")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetTicketAttachment(
+        int id,
+        int attachmentId,
+        [FromQuery] bool download,
+        CancellationToken cancellationToken)
+    {
+        var result = await ticketService.GetTicketAttachmentFileAsync(User, id, attachmentId, cancellationToken);
+        if (result.Status != TicketServiceResultStatus.Success || result.Value is null)
+        {
+            return ToFileFailureActionResult(result);
+        }
+
+        return PhysicalFile(
+            result.Value.PhysicalPath,
+            result.Value.ContentType,
+            download ? result.Value.FileName : null,
+            enableRangeProcessing: true);
+    }
+
     [HttpDelete("{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -149,6 +196,19 @@ public sealed class TicketsController(ITicketService ticketService) : Controller
     }
 
     private IActionResult ToActionResult(TicketServiceResult result)
+    {
+        return result.Status switch
+        {
+            TicketServiceResultStatus.Unauthorized => Unauthorized(new { message = result.Message }),
+            TicketServiceResultStatus.Forbidden => StatusCode(StatusCodes.Status403Forbidden, new { message = result.Message }),
+            TicketServiceResultStatus.NotFound => NotFound(),
+            TicketServiceResultStatus.BadRequest => BadRequest(new { message = result.Message }),
+            TicketServiceResultStatus.Conflict => Conflict(new { message = result.Message }),
+            _ => StatusCode(StatusCodes.Status500InternalServerError)
+        };
+    }
+
+    private IActionResult ToFileFailureActionResult<T>(TicketServiceResult<T> result)
     {
         return result.Status switch
         {

@@ -33,4 +33,6 @@ public sealed class TicketResponse
     public required IReadOnlyCollection<TicketStatus> AvailableStatusTransitions { get; init; }
 
     public required IReadOnlyCollection<TicketCommentResponse> Comments { get; init; }
+
+    public required IReadOnlyCollection<TicketAttachmentResponse> Attachments { get; init; }
 }

@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using BorroDesk.Api.DTOs.Tickets;
+using Microsoft.AspNetCore.Http;
 
 namespace BorroDesk.Api.Services;
 
@@ -42,6 +43,18 @@ public interface ITicketService
         ClaimsPrincipal user,
         int ticketId,
         CreateTicketCommentRequest request,
+        CancellationToken cancellationToken);
+
+    Task<TicketServiceResult<TicketAttachmentResponse>> UploadTicketScreenshotAsync(
+        ClaimsPrincipal user,
+        int ticketId,
+        IFormFile file,
+        CancellationToken cancellationToken);
+
+    Task<TicketServiceResult<TicketAttachmentFileResponse>> GetTicketAttachmentFileAsync(
+        ClaimsPrincipal user,
+        int ticketId,
+        int attachmentId,
         CancellationToken cancellationToken);
 
     Task<TicketServiceResult> DeleteTicketAsync(
