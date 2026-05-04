@@ -1,4 +1,4 @@
-using BorroDesk.Api.Enums;
+using BorroDesk.Api.Entities.Enums;
 
 namespace BorroDesk.Api.Entities;
 

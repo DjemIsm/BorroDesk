@@ -1,12 +1,14 @@
+using BorroDesk.Api.Authorization;
 using BorroDesk.Api.Entities;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace BorroDesk.Api.Data;
 
-public class BorroDeskDbContext(DbContextOptions<BorroDeskDbContext> options) : DbContext(options)
+public class BorroDeskDbContext(DbContextOptions<BorroDeskDbContext> options)
+    : IdentityDbContext<User, IdentityRole<int>, int>(options)
 {
-    public DbSet<User> Users => Set<User>();
-
     public DbSet<Ticket> Tickets => Set<Ticket>();
 
     public DbSet<TicketComment> TicketComments => Set<TicketComment>();
@@ -21,34 +23,65 @@ public class BorroDeskDbContext(DbContextOptions<BorroDeskDbContext> options) : 
         {
             entity.ToTable("Users");
 
-            entity.HasKey(user => user.Id);
-
             entity.Property(user => user.UserName)
                 .HasMaxLength(100)
                 .IsRequired();
 
-            entity.HasIndex(user => user.UserName)
-                .IsUnique();
+            entity.Property(user => user.NormalizedUserName)
+                .HasMaxLength(100);
 
             entity.Property(user => user.Email)
                 .HasMaxLength(256)
                 .IsRequired();
 
-            entity.HasIndex(user => user.Email)
-                .IsUnique();
+            entity.Property(user => user.NormalizedEmail)
+                .HasMaxLength(256);
 
             entity.Property(user => user.PasswordHash)
-                .HasMaxLength(500)
-                .IsRequired();
-
-            entity.Property(user => user.Role)
-                .HasConversion<string>()
-                .HasMaxLength(50)
-                .IsRequired();
+                .HasMaxLength(500);
 
             entity.Property(user => user.CreatedAt)
                 .HasDefaultValueSql("GETUTCDATE()");
+
+            entity.HasIndex(user => user.NormalizedEmail)
+                .HasDatabaseName("EmailIndex")
+                .IsUnique()
+                .HasFilter("[NormalizedEmail] IS NOT NULL");
         });
+
+        modelBuilder.Entity<IdentityRole<int>>(entity =>
+        {
+            entity.ToTable("Roles");
+
+            entity.HasData(
+                new IdentityRole<int>
+                {
+                    Id = 1,
+                    Name = ApplicationRoles.User,
+                    NormalizedName = ApplicationRoles.User.ToUpperInvariant(),
+                    ConcurrencyStamp = "96ee0cc1-cc3b-4a9c-9de8-f67a361f1e79"
+                },
+                new IdentityRole<int>
+                {
+                    Id = 2,
+                    Name = ApplicationRoles.Support,
+                    NormalizedName = ApplicationRoles.Support.ToUpperInvariant(),
+                    ConcurrencyStamp = "723052f5-2c2b-4465-ac7e-4340b1d72110"
+                },
+                new IdentityRole<int>
+                {
+                    Id = 3,
+                    Name = ApplicationRoles.Admin,
+                    NormalizedName = ApplicationRoles.Admin.ToUpperInvariant(),
+                    ConcurrencyStamp = "c797372b-ac98-430f-b21f-1a7f3ca85862"
+                });
+        });
+
+        modelBuilder.Entity<IdentityRoleClaim<int>>(entity => entity.ToTable("RoleClaims"));
+        modelBuilder.Entity<IdentityUserClaim<int>>(entity => entity.ToTable("UserClaims"));
+        modelBuilder.Entity<IdentityUserLogin<int>>(entity => entity.ToTable("UserLogins"));
+        modelBuilder.Entity<IdentityUserRole<int>>(entity => entity.ToTable("UserRoles"));
+        modelBuilder.Entity<IdentityUserToken<int>>(entity => entity.ToTable("UserTokens"));
 
         modelBuilder.Entity<Ticket>(entity =>
         {

@@ -1,4 +1,4 @@
-namespace BorroDesk.Api.Enums;
+namespace BorroDesk.Api.Entities.Enums;
 
 public enum TicketPriority
 {

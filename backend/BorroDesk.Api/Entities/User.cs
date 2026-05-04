@@ -1,19 +1,9 @@
-using BorroDesk.Api.Enums;
+using Microsoft.AspNetCore.Identity;
 
 namespace BorroDesk.Api.Entities;
 
-public class User
+public class User : IdentityUser<int>
 {
-    public int Id { get; set; }
-
-    public required string UserName { get; set; }
-
-    public required string Email { get; set; }
-
-    public required string PasswordHash { get; set; }
-
-    public UserRole Role { get; set; } = UserRole.User;
-
     public bool IsActive { get; set; } = true;
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

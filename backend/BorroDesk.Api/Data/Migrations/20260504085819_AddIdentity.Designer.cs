@@ -4,6 +4,7 @@ using BorroDesk.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BorroDesk.Api.Data.Migrations
 {
     [DbContext(typeof(BorroDeskDbContext))]
-    partial class BorroDeskDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260504085819_AddIdentity")]
+    partial class AddIdentity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -272,29 +275,6 @@ namespace BorroDesk.Api.Data.Migrations
                         .HasFilter("[NormalizedName] IS NOT NULL");
 
                     b.ToTable("Roles", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            ConcurrencyStamp = "96ee0cc1-cc3b-4a9c-9de8-f67a361f1e79",
-                            Name = "User",
-                            NormalizedName = "USER"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            ConcurrencyStamp = "723052f5-2c2b-4465-ac7e-4340b1d72110",
-                            Name = "Support",
-                            NormalizedName = "SUPPORT"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            ConcurrencyStamp = "c797372b-ac98-430f-b21f-1a7f3ca85862",
-                            Name = "Admin",
-                            NormalizedName = "ADMIN"
-                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
