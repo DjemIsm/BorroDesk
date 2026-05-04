@@ -56,6 +56,7 @@ builder.Services
     });
 
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ITicketService, TicketService>();
 builder.Services.AddControllers();
 builder.Services.AddOpenApi(options =>
 {
