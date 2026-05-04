@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json;
 using BorroDesk.Api.Configuration;
 using BorroDesk.Api.Data;
 using BorroDesk.Api.Entities;
@@ -6,6 +7,7 @@ using BorroDesk.Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
@@ -53,12 +55,60 @@ builder.Services
                 : new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SigningKey)),
             ClockSkew = TimeSpan.FromMinutes(1)
         };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnChallenge = async context =>
+            {
+                context.HandleResponse();
+                await WriteProblemDetailsAsync(
+                    context.HttpContext,
+                    StatusCodes.Status401Unauthorized,
+                    "Authentication required.",
+                    "A valid bearer token is required to access this resource.");
+            },
+            OnForbidden = async context =>
+            {
+                await WriteProblemDetailsAsync(
+                    context.HttpContext,
+                    StatusCodes.Status403Forbidden,
+                    "Access denied.",
+                    "You do not have permission to access this resource.");
+            }
+        };
     });
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IAdminUserService, AdminUserService>();
 builder.Services.AddScoped<ITicketService, TicketService>();
-builder.Services.AddControllers();
+builder.Services.AddProblemDetails(options =>
+{
+    options.CustomizeProblemDetails = context =>
+    {
+        context.ProblemDetails.Extensions["traceId"] = context.HttpContext.TraceIdentifier;
+    };
+});
+builder.Services.AddControllers()
+    .ConfigureApiBehaviorOptions(options =>
+    {
+        options.InvalidModelStateResponseFactory = context =>
+        {
+            var problemDetails = new ValidationProblemDetails(context.ModelState)
+            {
+                Type = "https://httpstatuses.com/400",
+                Title = "Validation failed.",
+                Status = StatusCodes.Status400BadRequest,
+                Detail = "One or more validation errors occurred.",
+                Instance = context.HttpContext.Request.Path
+            };
+            problemDetails.Extensions["traceId"] = context.HttpContext.TraceIdentifier;
+
+            return new BadRequestObjectResult(problemDetails)
+            {
+                ContentTypes = { "application/problem+json" }
+            };
+        };
+    });
 builder.Services.AddOpenApi(options =>
 {
     options.AddDocumentTransformer((document, _, _) =>
@@ -122,3 +172,25 @@ app.MapIdentityApi<User>();
 app.MapControllers();
 
 app.Run();
+
+static async Task WriteProblemDetailsAsync(HttpContext httpContext, int statusCode, string title, string detail)
+{
+    if (httpContext.Response.HasStarted)
+    {
+        return;
+    }
+
+    var problemDetails = new ProblemDetails
+    {
+        Type = $"https://httpstatuses.com/{statusCode}",
+        Title = title,
+        Status = statusCode,
+        Detail = detail,
+        Instance = httpContext.Request.Path
+    };
+    problemDetails.Extensions["traceId"] = httpContext.TraceIdentifier;
+
+    httpContext.Response.StatusCode = statusCode;
+    httpContext.Response.ContentType = "application/problem+json";
+    await httpContext.Response.WriteAsync(JsonSerializer.Serialize(problemDetails));
+}

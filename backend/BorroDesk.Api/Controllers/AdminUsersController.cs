@@ -105,12 +105,29 @@ public sealed class AdminUsersController(IAdminUserService adminUserService) : C
         return result.Status switch
         {
             AdminUserServiceResultStatus.Success => Ok(result.Value),
-            AdminUserServiceResultStatus.Unauthorized => Unauthorized(new { message = result.Message }),
-            AdminUserServiceResultStatus.Forbidden => StatusCode(StatusCodes.Status403Forbidden, new { message = result.Message }),
-            AdminUserServiceResultStatus.NotFound => NotFound(),
-            AdminUserServiceResultStatus.BadRequest => BadRequest(new { message = result.Message }),
-            AdminUserServiceResultStatus.Conflict => Conflict(new { message = result.Message }),
-            _ => StatusCode(StatusCodes.Status500InternalServerError)
+            AdminUserServiceResultStatus.Unauthorized => this.ApiProblem(
+                StatusCodes.Status401Unauthorized,
+                "Authentication required.",
+                result.Message),
+            AdminUserServiceResultStatus.Forbidden => this.ApiProblem(
+                StatusCodes.Status403Forbidden,
+                "Access denied.",
+                result.Message),
+            AdminUserServiceResultStatus.NotFound => this.ApiProblem(
+                StatusCodes.Status404NotFound,
+                "User was not found.",
+                result.Message),
+            AdminUserServiceResultStatus.BadRequest => this.ApiProblem(
+                StatusCodes.Status400BadRequest,
+                "Invalid user request.",
+                result.Message),
+            AdminUserServiceResultStatus.Conflict => this.ApiProblem(
+                StatusCodes.Status409Conflict,
+                "User request conflict.",
+                result.Message),
+            _ => this.ApiProblem(
+                StatusCodes.Status500InternalServerError,
+                "Unexpected user management error.")
         };
     }
 
@@ -118,12 +135,29 @@ public sealed class AdminUsersController(IAdminUserService adminUserService) : C
     {
         return result.Status switch
         {
-            AdminUserServiceResultStatus.Unauthorized => Unauthorized(new { message = result.Message }),
-            AdminUserServiceResultStatus.Forbidden => StatusCode(StatusCodes.Status403Forbidden, new { message = result.Message }),
-            AdminUserServiceResultStatus.NotFound => NotFound(),
-            AdminUserServiceResultStatus.BadRequest => BadRequest(new { message = result.Message }),
-            AdminUserServiceResultStatus.Conflict => Conflict(new { message = result.Message }),
-            _ => StatusCode(StatusCodes.Status500InternalServerError)
+            AdminUserServiceResultStatus.Unauthorized => this.ApiProblem(
+                StatusCodes.Status401Unauthorized,
+                "Authentication required.",
+                result.Message),
+            AdminUserServiceResultStatus.Forbidden => this.ApiProblem(
+                StatusCodes.Status403Forbidden,
+                "Access denied.",
+                result.Message),
+            AdminUserServiceResultStatus.NotFound => this.ApiProblem(
+                StatusCodes.Status404NotFound,
+                "User was not found.",
+                result.Message),
+            AdminUserServiceResultStatus.BadRequest => this.ApiProblem(
+                StatusCodes.Status400BadRequest,
+                "Invalid user request.",
+                result.Message),
+            AdminUserServiceResultStatus.Conflict => this.ApiProblem(
+                StatusCodes.Status409Conflict,
+                "User request conflict.",
+                result.Message),
+            _ => this.ApiProblem(
+                StatusCodes.Status500InternalServerError,
+                "Unexpected user management error.")
         };
     }
 }

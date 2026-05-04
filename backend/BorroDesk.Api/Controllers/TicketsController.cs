@@ -186,12 +186,29 @@ public sealed class TicketsController(ITicketService ticketService) : Controller
         return result.Status switch
         {
             TicketServiceResultStatus.Success => Ok(result.Value),
-            TicketServiceResultStatus.Unauthorized => Unauthorized(new { message = result.Message }),
-            TicketServiceResultStatus.Forbidden => StatusCode(StatusCodes.Status403Forbidden, new { message = result.Message }),
-            TicketServiceResultStatus.NotFound => NotFound(),
-            TicketServiceResultStatus.BadRequest => BadRequest(new { message = result.Message }),
-            TicketServiceResultStatus.Conflict => Conflict(new { message = result.Message }),
-            _ => StatusCode(StatusCodes.Status500InternalServerError)
+            TicketServiceResultStatus.Unauthorized => this.ApiProblem(
+                StatusCodes.Status401Unauthorized,
+                "Authentication required.",
+                result.Message),
+            TicketServiceResultStatus.Forbidden => this.ApiProblem(
+                StatusCodes.Status403Forbidden,
+                "Access denied.",
+                result.Message),
+            TicketServiceResultStatus.NotFound => this.ApiProblem(
+                StatusCodes.Status404NotFound,
+                "Ticket was not found.",
+                result.Message),
+            TicketServiceResultStatus.BadRequest => this.ApiProblem(
+                StatusCodes.Status400BadRequest,
+                "Invalid ticket request.",
+                result.Message),
+            TicketServiceResultStatus.Conflict => this.ApiProblem(
+                StatusCodes.Status409Conflict,
+                "Ticket request conflict.",
+                result.Message),
+            _ => this.ApiProblem(
+                StatusCodes.Status500InternalServerError,
+                "Unexpected ticket error.")
         };
     }
 
@@ -199,12 +216,29 @@ public sealed class TicketsController(ITicketService ticketService) : Controller
     {
         return result.Status switch
         {
-            TicketServiceResultStatus.Unauthorized => Unauthorized(new { message = result.Message }),
-            TicketServiceResultStatus.Forbidden => StatusCode(StatusCodes.Status403Forbidden, new { message = result.Message }),
-            TicketServiceResultStatus.NotFound => NotFound(),
-            TicketServiceResultStatus.BadRequest => BadRequest(new { message = result.Message }),
-            TicketServiceResultStatus.Conflict => Conflict(new { message = result.Message }),
-            _ => StatusCode(StatusCodes.Status500InternalServerError)
+            TicketServiceResultStatus.Unauthorized => this.ApiProblem(
+                StatusCodes.Status401Unauthorized,
+                "Authentication required.",
+                result.Message),
+            TicketServiceResultStatus.Forbidden => this.ApiProblem(
+                StatusCodes.Status403Forbidden,
+                "Access denied.",
+                result.Message),
+            TicketServiceResultStatus.NotFound => this.ApiProblem(
+                StatusCodes.Status404NotFound,
+                "Ticket was not found.",
+                result.Message),
+            TicketServiceResultStatus.BadRequest => this.ApiProblem(
+                StatusCodes.Status400BadRequest,
+                "Invalid ticket request.",
+                result.Message),
+            TicketServiceResultStatus.Conflict => this.ApiProblem(
+                StatusCodes.Status409Conflict,
+                "Ticket request conflict.",
+                result.Message),
+            _ => this.ApiProblem(
+                StatusCodes.Status500InternalServerError,
+                "Unexpected ticket error.")
         };
     }
 
@@ -212,12 +246,29 @@ public sealed class TicketsController(ITicketService ticketService) : Controller
     {
         return result.Status switch
         {
-            TicketServiceResultStatus.Unauthorized => Unauthorized(new { message = result.Message }),
-            TicketServiceResultStatus.Forbidden => StatusCode(StatusCodes.Status403Forbidden, new { message = result.Message }),
-            TicketServiceResultStatus.NotFound => NotFound(),
-            TicketServiceResultStatus.BadRequest => BadRequest(new { message = result.Message }),
-            TicketServiceResultStatus.Conflict => Conflict(new { message = result.Message }),
-            _ => StatusCode(StatusCodes.Status500InternalServerError)
+            TicketServiceResultStatus.Unauthorized => this.ApiProblem(
+                StatusCodes.Status401Unauthorized,
+                "Authentication required.",
+                result.Message),
+            TicketServiceResultStatus.Forbidden => this.ApiProblem(
+                StatusCodes.Status403Forbidden,
+                "Access denied.",
+                result.Message),
+            TicketServiceResultStatus.NotFound => this.ApiProblem(
+                StatusCodes.Status404NotFound,
+                "Attachment was not found.",
+                result.Message),
+            TicketServiceResultStatus.BadRequest => this.ApiProblem(
+                StatusCodes.Status400BadRequest,
+                "Invalid attachment request.",
+                result.Message),
+            TicketServiceResultStatus.Conflict => this.ApiProblem(
+                StatusCodes.Status409Conflict,
+                "Attachment request conflict.",
+                result.Message),
+            _ => this.ApiProblem(
+                StatusCodes.Status500InternalServerError,
+                "Unexpected attachment error.")
         };
     }
 }

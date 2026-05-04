@@ -18,7 +18,10 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
         var response = await authService.LoginAsync(request);
         if (response is null)
         {
-            return Unauthorized(new { message = "Invalid email or password." });
+            return this.ApiProblem(
+                StatusCodes.Status401Unauthorized,
+                "Authentication failed.",
+                "Invalid email or password.");
         }
 
         return Ok(response);
