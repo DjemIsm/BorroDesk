@@ -98,6 +98,25 @@ public sealed class TicketsController(ITicketService ticketService) : Controller
         return ToActionResult(result);
     }
 
+    [HttpPost("{id:int}/comments")]
+    [ProducesResponseType<TicketCommentResponse>(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<TicketCommentResponse>> AddTicketComment(
+        int id,
+        CreateTicketCommentRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await ticketService.AddTicketCommentAsync(User, id, request, cancellationToken);
+        if (result.Status != TicketServiceResultStatus.Success || result.Value is null)
+        {
+            return ToActionResult(result);
+        }
+
+        return CreatedAtAction(nameof(GetTicket), new { id }, result.Value);
+    }
+
     [HttpDelete("{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

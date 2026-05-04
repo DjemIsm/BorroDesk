@@ -313,6 +313,50 @@ public sealed class TicketService(
         return TicketServiceResult<TicketResponse>.Success(ToDetail(updatedTicket, actor));
     }
 
+    public async Task<TicketServiceResult<TicketCommentResponse>> AddTicketCommentAsync(
+        ClaimsPrincipal user,
+        int ticketId,
+        CreateTicketCommentRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetActor(user, out var actor))
+        {
+            return Unauthorized<TicketCommentResponse>();
+        }
+
+        if (!TryNormalizeCommentText(request.Text, out var text, out var validationMessage))
+        {
+            return BadRequest<TicketCommentResponse>(validationMessage);
+        }
+
+        var ticket = await dbContext.Tickets
+            .SingleOrDefaultAsync(ticket => ticket.Id == ticketId, cancellationToken);
+        if (ticket is null || !CanCommentOnTicket(ticket, actor))
+        {
+            return NotFound<TicketCommentResponse>();
+        }
+
+        var comment = new TicketComment
+        {
+            TicketId = ticket.Id,
+            UserId = actor.UserId,
+            Comment = text
+        };
+
+        ticket.UpdatedAt = DateTime.UtcNow;
+        dbContext.TicketComments.Add(comment);
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        var createdComment = await dbContext.TicketComments
+            .AsNoTracking()
+            .Include(ticketComment => ticketComment.User)
+            .SingleOrDefaultAsync(ticketComment => ticketComment.Id == comment.Id, cancellationToken)
+            ?? throw new InvalidOperationException($"Created ticket comment {comment.Id} could not be loaded.");
+
+        return TicketServiceResult<TicketCommentResponse>.Success(ToComment(createdComment));
+    }
+
     public async Task<TicketServiceResult> DeleteTicketAsync(
         ClaimsPrincipal user,
         int id,
@@ -383,6 +427,8 @@ public sealed class TicketService(
         return await query
             .Include(ticket => ticket.CreatedByUser)
             .Include(ticket => ticket.AssignedToUser)
+            .Include(ticket => ticket.Comments)
+                .ThenInclude(comment => comment.User)
             .SingleOrDefaultAsync(ticket => ticket.Id == id, cancellationToken);
     }
 
@@ -559,6 +605,11 @@ public sealed class TicketService(
         return actor.IsStaff || ticket.CreatedByUserId == actor.UserId;
     }
 
+    private static bool CanCommentOnTicket(Ticket ticket, TicketActor actor)
+    {
+        return actor.IsStaff || ticket.CreatedByUserId == actor.UserId;
+    }
+
     private static bool CanTransition(
         TicketStatus currentStatus,
         TicketStatus nextStatus,
@@ -636,7 +687,25 @@ public sealed class TicketService(
             CanEdit = CanEditTicket(ticket, actor).Allowed,
             CanAssign = CanAssignTicketWithoutAssigneeLookup(ticket, actor).Allowed,
             CanDelete = CanDeleteTicket(ticket, actor).Allowed,
-            AvailableStatusTransitions = GetAvailableStatusTransitions(ticket, actor)
+            AvailableStatusTransitions = GetAvailableStatusTransitions(ticket, actor),
+            Comments = ticket.Comments
+                .OrderBy(comment => comment.CreatedAt)
+                .ThenBy(comment => comment.Id)
+                .Select(ToComment)
+                .ToArray()
+        };
+    }
+
+    private static TicketCommentResponse ToComment(TicketComment comment)
+    {
+        return new TicketCommentResponse
+        {
+            Id = comment.Id,
+            TicketId = comment.TicketId,
+            Author = ToUser(comment.UserId, comment.User),
+            Text = comment.Comment,
+            CreatedAt = comment.CreatedAt,
+            UpdatedAt = comment.UpdatedAt
         };
     }
 
@@ -697,6 +766,22 @@ public sealed class TicketService(
         if (normalizedDescription.Length == 0)
         {
             validationMessage = "Ticket description is required.";
+            return false;
+        }
+
+        validationMessage = string.Empty;
+        return true;
+    }
+
+    private static bool TryNormalizeCommentText(
+        string? text,
+        out string normalizedText,
+        out string validationMessage)
+    {
+        normalizedText = text?.Trim() ?? string.Empty;
+        if (normalizedText.Length == 0)
+        {
+            validationMessage = "Comment text is required.";
             return false;
         }
 

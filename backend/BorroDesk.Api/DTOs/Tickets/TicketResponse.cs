@@ -31,4 +31,6 @@ public sealed class TicketResponse
     public bool CanDelete { get; init; }
 
     public required IReadOnlyCollection<TicketStatus> AvailableStatusTransitions { get; init; }
+
+    public required IReadOnlyCollection<TicketCommentResponse> Comments { get; init; }
 }

@@ -38,6 +38,12 @@ public interface ITicketService
         AssignTicketRequest request,
         CancellationToken cancellationToken);
 
+    Task<TicketServiceResult<TicketCommentResponse>> AddTicketCommentAsync(
+        ClaimsPrincipal user,
+        int ticketId,
+        CreateTicketCommentRequest request,
+        CancellationToken cancellationToken);
+
     Task<TicketServiceResult> DeleteTicketAsync(
         ClaimsPrincipal user,
         int id,
