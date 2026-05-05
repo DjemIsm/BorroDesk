@@ -5,6 +5,8 @@ import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AuthService } from '../../../core/auth/auth.service';
+import { LanguageService } from '../../../core/i18n/language.service';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import {
   PagedResponse,
   TicketPriority,
@@ -17,24 +19,24 @@ import {
 
 type TicketOwnershipFilter = 'all' | 'assignedToMe' | 'createdByMe';
 
-const ticketStatusLabels: Record<TicketStatus, string> = {
-  [TicketStatus.Open]: 'Open',
-  [TicketStatus.InProgress]: 'In progress',
-  [TicketStatus.Resolved]: 'Resolved',
-  [TicketStatus.Closed]: 'Closed',
-  [TicketStatus.Reopened]: 'Reopened'
+const ticketStatusTranslationKeys: Record<TicketStatus, string> = {
+  [TicketStatus.Open]: 'ticketStatus.open',
+  [TicketStatus.InProgress]: 'ticketStatus.inProgress',
+  [TicketStatus.Resolved]: 'ticketStatus.resolved',
+  [TicketStatus.Closed]: 'ticketStatus.closed',
+  [TicketStatus.Reopened]: 'ticketStatus.reopened'
 };
 
-const ticketPriorityLabels: Record<TicketPriority, string> = {
-  [TicketPriority.Low]: 'Low',
-  [TicketPriority.Normal]: 'Normal',
-  [TicketPriority.High]: 'High',
-  [TicketPriority.Urgent]: 'Urgent'
+const ticketPriorityTranslationKeys: Record<TicketPriority, string> = {
+  [TicketPriority.Low]: 'ticketPriority.low',
+  [TicketPriority.Normal]: 'ticketPriority.normal',
+  [TicketPriority.High]: 'ticketPriority.high',
+  [TicketPriority.Urgent]: 'ticketPriority.urgent'
 };
 
 @Component({
   selector: 'app-tickets-page',
-  imports: [DatePipe, ReactiveFormsModule, RouterLink],
+  imports: [DatePipe, ReactiveFormsModule, RouterLink, TranslatePipe],
   templateUrl: './tickets-page.component.html'
 })
 export class TicketsPageComponent implements OnInit {
@@ -43,21 +45,22 @@ export class TicketsPageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly ticketsService = inject(TicketsService);
+  protected readonly i18n = inject(LanguageService);
 
   protected readonly pageSizeOptions = [10, 25, 50, 100] as const;
-  protected readonly priorityOptions = [
-    { value: TicketPriority.Low, label: ticketPriorityLabels[TicketPriority.Low] },
-    { value: TicketPriority.Normal, label: ticketPriorityLabels[TicketPriority.Normal] },
-    { value: TicketPriority.High, label: ticketPriorityLabels[TicketPriority.High] },
-    { value: TicketPriority.Urgent, label: ticketPriorityLabels[TicketPriority.Urgent] }
-  ];
-  protected readonly statusOptions = [
-    { value: TicketStatus.Open, label: ticketStatusLabels[TicketStatus.Open] },
-    { value: TicketStatus.InProgress, label: ticketStatusLabels[TicketStatus.InProgress] },
-    { value: TicketStatus.Resolved, label: ticketStatusLabels[TicketStatus.Resolved] },
-    { value: TicketStatus.Closed, label: ticketStatusLabels[TicketStatus.Closed] },
-    { value: TicketStatus.Reopened, label: ticketStatusLabels[TicketStatus.Reopened] }
-  ];
+  protected readonly priorityOptions = computed(() => [
+    { value: TicketPriority.Low, label: this.priorityLabel(TicketPriority.Low) },
+    { value: TicketPriority.Normal, label: this.priorityLabel(TicketPriority.Normal) },
+    { value: TicketPriority.High, label: this.priorityLabel(TicketPriority.High) },
+    { value: TicketPriority.Urgent, label: this.priorityLabel(TicketPriority.Urgent) }
+  ]);
+  protected readonly statusOptions = computed(() => [
+    { value: TicketStatus.Open, label: this.statusLabel(TicketStatus.Open) },
+    { value: TicketStatus.InProgress, label: this.statusLabel(TicketStatus.InProgress) },
+    { value: TicketStatus.Resolved, label: this.statusLabel(TicketStatus.Resolved) },
+    { value: TicketStatus.Closed, label: this.statusLabel(TicketStatus.Closed) },
+    { value: TicketStatus.Reopened, label: this.statusLabel(TicketStatus.Reopened) }
+  ]);
 
   protected readonly errorMessage = signal('');
   protected readonly isLoading = signal(false);
@@ -84,13 +87,17 @@ export class TicketsPageComponent implements OnInit {
   protected readonly resultSummary = computed(() => {
     const response = this.ticketResponse();
     if (!response || response.totalCount === 0) {
-      return '0 tickets';
+      return this.i18n.translate('tickets.resultZero');
     }
 
     const start = (response.pageNumber - 1) * response.pageSize + 1;
     const end = Math.min(response.pageNumber * response.pageSize, response.totalCount);
 
-    return `${start}-${end} of ${response.totalCount} tickets`;
+    return this.i18n.translate('tickets.resultRange', {
+      end,
+      start,
+      total: response.totalCount
+    });
   });
 
   ngOnInit(): void {
@@ -128,11 +135,15 @@ export class TicketsPageComponent implements OnInit {
   }
 
   protected statusLabel(status: TicketStatus): string {
-    return ticketStatusLabels[status] ?? 'Unknown';
+    const translationKey = ticketStatusTranslationKeys[status];
+
+    return translationKey ? this.i18n.translate(translationKey) : this.i18n.translate('common.unknown');
   }
 
   protected priorityLabel(priority: TicketPriority): string {
-    return ticketPriorityLabels[priority] ?? 'Unknown';
+    const translationKey = ticketPriorityTranslationKeys[priority];
+
+    return translationKey ? this.i18n.translate(translationKey) : this.i18n.translate('common.unknown');
   }
 
   protected statusClass(status: TicketStatus): string {
@@ -145,10 +156,10 @@ export class TicketsPageComponent implements OnInit {
 
   protected userLabel(user: TicketUserResponse | null): string {
     if (!user) {
-      return 'Unassigned';
+      return this.i18n.translate('common.unassigned');
     }
 
-    return user.userName || user.email || `User #${user.id}`;
+    return user.userName || user.email || this.i18n.translate('common.userNumber', { id: user.id });
   }
 
   protected trackTicket(_index: number, ticket: TicketSummaryResponse): number {
@@ -261,20 +272,20 @@ export class TicketsPageComponent implements OnInit {
   private resolveTicketsError(error: unknown): string {
     if (error instanceof HttpErrorResponse) {
       if (error.status === 0) {
-        return 'Cannot reach the BorroDesk API. Start the backend and try again.';
+        return this.i18n.translate('common.apiUnavailable');
       }
 
       if (error.status === 401) {
-        return 'Your session expired. Sign in again to load tickets.';
+        return this.i18n.translate('tickets.sessionExpired');
       }
 
       if (error.status === 403) {
-        return 'Your role does not have access to this ticket list.';
+        return this.i18n.translate('tickets.permissionDenied');
       }
 
-      return error.error?.detail || error.error?.title || 'Tickets could not be loaded.';
+      return error.error?.detail || error.error?.title || this.i18n.translate('tickets.loadFailed');
     }
 
-    return 'Tickets could not be loaded.';
+    return this.i18n.translate('tickets.loadFailed');
   }
 }

@@ -433,6 +433,38 @@ a {
   color: #18211f;
 }
 
+.auth-language-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 24px;
+}
+
+.language-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #40504a;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.language-select select {
+  height: 36px;
+  border: 1px solid #b8c5c0;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #18211f;
+  cursor: pointer;
+  font-weight: 800;
+  padding: 0 10px;
+  outline: none;
+}
+
+.language-select select:focus {
+  border-color: #1f766b;
+  box-shadow: 0 0 0 3px rgba(47, 133, 120, 0.18);
+}
+
 .app-shell {
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr);
@@ -1112,7 +1144,7 @@ a {
 }
 
 .detail-meta-grid div,
-.permission-list span {
+.permission-item {
   display: grid;
   gap: 4px;
   border: 1px solid #e0e7e4;
@@ -1146,26 +1178,24 @@ a {
   gap: 10px;
 }
 
-.permission-list span {
+.permission-item {
   color: #8a5f57;
   font-weight: 800;
 }
 
-.permission-list span::after {
+.permission-item small {
   color: #9c2f22;
-  content: "Unavailable";
   font-size: 0.78rem;
   font-weight: 700;
 }
 
-.permission-list span.is-enabled {
+.permission-item.is-enabled {
   background: #edf5f2;
   color: #153f3a;
 }
 
-.permission-list span.is-enabled::after {
+.permission-item.is-enabled small {
   color: #2f8578;
-  content: "Available";
 }
 
 .comments-panel,

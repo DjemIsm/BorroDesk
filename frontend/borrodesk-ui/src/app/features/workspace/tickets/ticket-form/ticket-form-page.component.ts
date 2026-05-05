@@ -3,31 +3,34 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
+import { LanguageService } from '../../../../core/i18n/language.service';
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 import {
   TicketPriority,
   TicketResponse,
   TicketStatus,
+  TicketUserResponse,
   TicketsService
 } from '../../../../core/tickets/tickets.service';
 
-const ticketPriorityLabels: Record<TicketPriority, string> = {
-  [TicketPriority.Low]: 'Low',
-  [TicketPriority.Normal]: 'Normal',
-  [TicketPriority.High]: 'High',
-  [TicketPriority.Urgent]: 'Urgent'
+const ticketPriorityTranslationKeys: Record<TicketPriority, string> = {
+  [TicketPriority.Low]: 'ticketPriority.low',
+  [TicketPriority.Normal]: 'ticketPriority.normal',
+  [TicketPriority.High]: 'ticketPriority.high',
+  [TicketPriority.Urgent]: 'ticketPriority.urgent'
 };
 
-const ticketStatusLabels: Record<TicketStatus, string> = {
-  [TicketStatus.Open]: 'Open',
-  [TicketStatus.InProgress]: 'In progress',
-  [TicketStatus.Resolved]: 'Resolved',
-  [TicketStatus.Closed]: 'Closed',
-  [TicketStatus.Reopened]: 'Reopened'
+const ticketStatusTranslationKeys: Record<TicketStatus, string> = {
+  [TicketStatus.Open]: 'ticketStatus.open',
+  [TicketStatus.InProgress]: 'ticketStatus.inProgress',
+  [TicketStatus.Resolved]: 'ticketStatus.resolved',
+  [TicketStatus.Closed]: 'ticketStatus.closed',
+  [TicketStatus.Reopened]: 'ticketStatus.reopened'
 };
 
 @Component({
   selector: 'app-ticket-form-page',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, TranslatePipe],
   templateUrl: './ticket-form-page.component.html'
 })
 export class TicketFormPageComponent implements OnInit {
@@ -35,6 +38,7 @@ export class TicketFormPageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly ticketsService = inject(TicketsService);
+  protected readonly i18n = inject(LanguageService);
 
   protected readonly errorMessage = signal('');
   protected readonly isLoading = signal(false);
@@ -42,12 +46,12 @@ export class TicketFormPageComponent implements OnInit {
   protected readonly ticket = signal<TicketResponse | null>(null);
   protected readonly ticketId = signal<number | null>(null);
 
-  protected readonly priorityOptions = [
-    { value: TicketPriority.Low, label: ticketPriorityLabels[TicketPriority.Low] },
-    { value: TicketPriority.Normal, label: ticketPriorityLabels[TicketPriority.Normal] },
-    { value: TicketPriority.High, label: ticketPriorityLabels[TicketPriority.High] },
-    { value: TicketPriority.Urgent, label: ticketPriorityLabels[TicketPriority.Urgent] }
-  ];
+  protected readonly priorityOptions = computed(() => [
+    { value: TicketPriority.Low, label: this.priorityLabel(TicketPriority.Low) },
+    { value: TicketPriority.Normal, label: this.priorityLabel(TicketPriority.Normal) },
+    { value: TicketPriority.High, label: this.priorityLabel(TicketPriority.High) },
+    { value: TicketPriority.Urgent, label: this.priorityLabel(TicketPriority.Urgent) }
+  ]);
 
   protected readonly ticketForm = this.formBuilder.group({
     title: ['', [Validators.required, Validators.maxLength(200)]],
@@ -56,13 +60,22 @@ export class TicketFormPageComponent implements OnInit {
   });
 
   protected readonly isEditMode = computed(() => this.ticketId() !== null);
-  protected readonly pageTitle = computed(() => this.isEditMode() ? 'Edit ticket' : 'Create ticket');
+  protected readonly pageEyebrow = computed(() => this.isEditMode()
+    ? this.i18n.translate('ticketForm.editEyebrow')
+    : this.i18n.translate('ticketForm.createEyebrow'));
+  protected readonly pageTitle = computed(() => this.isEditMode()
+    ? this.i18n.translate('ticketForm.editTitle')
+    : this.i18n.translate('ticketForm.createTitle'));
   protected readonly submitLabel = computed(() => {
     if (this.isSaving()) {
-      return this.isEditMode() ? 'Saving changes' : 'Creating ticket';
+      return this.isEditMode()
+        ? this.i18n.translate('ticketForm.saveSubmitBusy')
+        : this.i18n.translate('ticketForm.createSubmitBusy');
     }
 
-    return this.isEditMode() ? 'Save changes' : 'Create ticket';
+    return this.isEditMode()
+      ? this.i18n.translate('ticketForm.saveSubmit')
+      : this.i18n.translate('ticketForm.createSubmit');
   });
 
   ngOnInit(): void {
@@ -73,7 +86,7 @@ export class TicketFormPageComponent implements OnInit {
 
     const parsedId = Number(routeId);
     if (!Number.isInteger(parsedId) || parsedId <= 0) {
-      this.errorMessage.set('Ticket id is invalid.');
+      this.errorMessage.set(this.i18n.translate('ticketForm.ticketIdInvalid'));
       this.ticketForm.disable();
       return;
     }
@@ -116,18 +129,34 @@ export class TicketFormPageComponent implements OnInit {
   protected titleError(): string {
     const title = this.ticketForm.controls.title;
     if (title.hasError('required')) {
-      return 'Enter a ticket title.';
+      return this.i18n.translate('ticketForm.titleRequired');
     }
 
     if (title.hasError('maxlength')) {
-      return 'Keep the title at 200 characters or less.';
+      return this.i18n.translate('ticketForm.titleMaxLength');
     }
 
     return '';
   }
 
   protected statusLabel(status: TicketStatus): string {
-    return ticketStatusLabels[status] ?? 'Unknown';
+    const translationKey = ticketStatusTranslationKeys[status];
+
+    return translationKey ? this.i18n.translate(translationKey) : this.i18n.translate('common.unknown');
+  }
+
+  protected priorityLabel(priority: TicketPriority): string {
+    const translationKey = ticketPriorityTranslationKeys[priority];
+
+    return translationKey ? this.i18n.translate(translationKey) : this.i18n.translate('common.unknown');
+  }
+
+  protected userLabel(user: TicketUserResponse | null): string {
+    if (!user) {
+      return this.i18n.translate('common.unassigned');
+    }
+
+    return user.userName || user.email || this.i18n.translate('common.userNumber', { id: user.id });
   }
 
   private loadTicket(id: number): void {
@@ -149,7 +178,7 @@ export class TicketFormPageComponent implements OnInit {
           if (ticket.canEdit) {
             this.ticketForm.enable();
           } else {
-            this.errorMessage.set('You can view this ticket, but your role cannot edit it.');
+            this.errorMessage.set(this.i18n.translate('ticketForm.editDenied'));
           }
         },
         error: (error: unknown) => {
@@ -161,24 +190,24 @@ export class TicketFormPageComponent implements OnInit {
   private resolveTicketError(error: unknown): string {
     if (error instanceof HttpErrorResponse) {
       if (error.status === 0) {
-        return 'Cannot reach the BorroDesk API. Start the backend and try again.';
+        return this.i18n.translate('common.apiUnavailable');
       }
 
       if (error.status === 401) {
-        return 'Your session expired. Sign in again to continue.';
+        return this.i18n.translate('ticketForm.sessionExpired');
       }
 
       if (error.status === 403) {
-        return 'Your role does not have permission to change this ticket.';
+        return this.i18n.translate('ticketForm.permissionDenied');
       }
 
       if (error.status === 404) {
-        return 'Ticket was not found.';
+        return this.i18n.translate('ticketForm.ticketNotFound');
       }
 
-      return error.error?.detail || error.error?.title || 'Ticket could not be saved.';
+      return error.error?.detail || error.error?.title || this.i18n.translate('ticketForm.saveFailed');
     }
 
-    return 'Ticket could not be saved.';
+    return this.i18n.translate('ticketForm.saveFailed');
   }
 }

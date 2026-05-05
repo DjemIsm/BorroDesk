@@ -1,10 +1,10 @@
 <main class="workspace-page">
   <section class="page-heading">
     <div>
-      <p class="workspace-eyebrow">{{ isEditMode() ? 'Ticket update' : 'New request' }}</p>
+      <p class="workspace-eyebrow">{{ pageEyebrow() }}</p>
       <h2>{{ pageTitle() }}</h2>
     </div>
-    <a class="text-button link-button" routerLink="/app/tickets">Back to tickets</a>
+    <a class="text-button link-button" routerLink="/app/tickets">{{ 'ticketForm.backToTickets' | translate }}</a>
   </section>
 
   @if (errorMessage()) {
@@ -14,19 +14,19 @@
   <form class="workspace-card ticket-editor" [formGroup]="ticketForm" (ngSubmit)="submit()" novalidate>
     @if (isLoading()) {
       <div class="table-empty">
-        <strong>Loading ticket</strong>
-        <span>Fetching the current ticket details.</span>
+        <strong>{{ 'ticketForm.loadingTicket' | translate }}</strong>
+        <span>{{ 'ticketForm.loadingHelp' | translate }}</span>
       </div>
     } @else {
       <div class="editor-grid">
         <div class="field title-field">
-          <label for="ticket-title">Title</label>
+          <label for="ticket-title">{{ 'ticketForm.titleLabel' | translate }}</label>
           <input
             id="ticket-title"
             type="text"
             formControlName="title"
             maxlength="200"
-            placeholder="Briefly describe the issue"
+            [placeholder]="'ticketForm.titlePlaceholder' | translate"
             [class.is-invalid]="ticketForm.controls.title.invalid && ticketForm.controls.title.touched"
           />
           @if (ticketForm.controls.title.invalid && ticketForm.controls.title.touched) {
@@ -35,42 +35,42 @@
         </div>
 
         <div class="field">
-          <label for="ticket-priority">Priority</label>
+          <label for="ticket-priority">{{ 'ticketForm.priorityLabel' | translate }}</label>
           <select id="ticket-priority" formControlName="priority">
-            @for (priority of priorityOptions; track priority.value) {
+            @for (priority of priorityOptions(); track priority.value) {
               <option [value]="priority.value">{{ priority.label }}</option>
             }
           </select>
         </div>
 
         <div class="field description-field">
-          <label for="ticket-description">Description</label>
+          <label for="ticket-description">{{ 'ticketForm.descriptionLabel' | translate }}</label>
           <textarea
             id="ticket-description"
             formControlName="description"
             rows="10"
-            placeholder="Add the details needed to resolve this request"
+            [placeholder]="'ticketForm.descriptionPlaceholder' | translate"
             [class.is-invalid]="ticketForm.controls.description.invalid && ticketForm.controls.description.touched"
           ></textarea>
           @if (ticketForm.controls.description.invalid && ticketForm.controls.description.touched) {
-            <p class="field-error">Enter a ticket description.</p>
+            <p class="field-error">{{ 'ticketForm.descriptionRequired' | translate }}</p>
           }
         </div>
       </div>
 
       @if (ticket(); as currentTicket) {
-        <aside class="ticket-form-summary" aria-label="Ticket details">
+        <aside class="ticket-form-summary" [attr.aria-label]="'ticketForm.detailsAria' | translate">
           <div>
-            <span>Status</span>
+            <span>{{ 'ticketForm.status' | translate }}</span>
             <strong>{{ statusLabel(currentTicket.status) }}</strong>
           </div>
           <div>
-            <span>Created by</span>
-            <strong>{{ currentTicket.createdBy.userName || currentTicket.createdBy.email || 'Unknown user' }}</strong>
+            <span>{{ 'ticketForm.createdBy' | translate }}</span>
+            <strong>{{ userLabel(currentTicket.createdBy) }}</strong>
           </div>
           <div>
-            <span>Assigned to</span>
-            <strong>{{ currentTicket.assignedTo?.userName || currentTicket.assignedTo?.email || 'Unassigned' }}</strong>
+            <span>{{ 'ticketForm.assignedTo' | translate }}</span>
+            <strong>{{ userLabel(currentTicket.assignedTo) }}</strong>
           </div>
         </aside>
       }
@@ -79,7 +79,7 @@
         <button class="action-button" type="submit" [disabled]="isSaving() || ticketForm.disabled">
           {{ submitLabel() }}
         </button>
-        <a class="text-button link-button" routerLink="/app/tickets">Cancel</a>
+        <a class="text-button link-button" routerLink="/app/tickets">{{ 'ticketForm.cancel' | translate }}</a>
       </div>
     }
   </form>

@@ -1,14 +1,16 @@
 <main class="workspace-page">
   <section class="page-heading">
     <div>
-      <p class="workspace-eyebrow">Ticket detail</p>
-      <h2>{{ ticket()?.title || 'Ticket' }}</h2>
+      <p class="workspace-eyebrow">{{ 'ticketDetail.ticketDetail' | translate }}</p>
+      <h2>{{ ticket()?.title || i18n.translate('ticketDetail.ticket') }}</h2>
     </div>
     <div class="page-actions">
       @if (ticket()?.canEdit) {
-        <a class="action-button" [routerLink]="['/app/tickets', ticket()?.id, 'edit']">Edit ticket</a>
+        <a class="action-button" [routerLink]="['/app/tickets', ticket()?.id, 'edit']">
+          {{ 'ticketDetail.editTicket' | translate }}
+        </a>
       }
-      <a class="text-button link-button" routerLink="/app/tickets">Back to tickets</a>
+      <a class="text-button link-button" routerLink="/app/tickets">{{ 'ticketDetail.backToTickets' | translate }}</a>
     </div>
   </section>
 
@@ -19,8 +21,8 @@
   @if (isLoading()) {
     <section class="workspace-card">
       <div class="table-empty">
-        <strong>Loading ticket</strong>
-        <span>Fetching ticket activity and attachments.</span>
+        <strong>{{ 'ticketDetail.loadingTicket' | translate }}</strong>
+        <span>{{ 'ticketDetail.loadingHelp' | translate }}</span>
       </div>
     </section>
   } @else if (ticket(); as currentTicket) {
@@ -41,30 +43,45 @@
 
         <div class="detail-meta-grid">
           <div>
-            <span>Created by</span>
+            <span>{{ 'ticketDetail.createdBy' | translate }}</span>
             <strong>{{ userLabel(currentTicket.createdBy) }}</strong>
           </div>
           <div>
-            <span>Assigned to</span>
+            <span>{{ 'ticketDetail.assignedTo' | translate }}</span>
             <strong>{{ userLabel(currentTicket.assignedTo) }}</strong>
           </div>
           <div>
-            <span>Created</span>
-            <strong>{{ currentTicket.createdAt | date: 'medium' }}</strong>
+            <span>{{ 'ticketDetail.created' | translate }}</span>
+            <strong>{{ currentTicket.createdAt | date: 'medium' : undefined : i18n.dateLocale() }}</strong>
           </div>
           <div>
-            <span>Updated</span>
-            <strong>{{ currentTicket.updatedAt ? (currentTicket.updatedAt | date: 'medium') : 'No updates' }}</strong>
+            <span>{{ 'ticketDetail.updated' | translate }}</span>
+            <strong>
+              @if (currentTicket.updatedAt) {
+                {{ currentTicket.updatedAt | date: 'medium' : undefined : i18n.dateLocale() }}
+              } @else {
+                {{ 'ticketDetail.noUpdates' | translate }}
+              }
+            </strong>
           </div>
         </div>
       </article>
 
       <aside class="workspace-card ticket-side-panel">
-        <h3>Allowed actions</h3>
+        <h3>{{ 'ticketDetail.allowedActions' | translate }}</h3>
         <div class="permission-list">
-          <span [class.is-enabled]="currentTicket.canEdit">Edit ticket</span>
-          <span [class.is-enabled]="currentTicket.canAssign">Assign ticket</span>
-          <span [class.is-enabled]="currentTicket.canDelete">Delete ticket</span>
+          <div class="permission-item" [class.is-enabled]="currentTicket.canEdit">
+            <span>{{ 'ticketDetail.actionEdit' | translate }}</span>
+            <small>{{ (currentTicket.canEdit ? 'common.available' : 'common.unavailable') | translate }}</small>
+          </div>
+          <div class="permission-item" [class.is-enabled]="currentTicket.canAssign">
+            <span>{{ 'ticketDetail.actionAssign' | translate }}</span>
+            <small>{{ (currentTicket.canAssign ? 'common.available' : 'common.unavailable') | translate }}</small>
+          </div>
+          <div class="permission-item" [class.is-enabled]="currentTicket.canDelete">
+            <span>{{ 'ticketDetail.actionDelete' | translate }}</span>
+            <small>{{ (currentTicket.canDelete ? 'common.available' : 'common.unavailable') | translate }}</small>
+          </div>
         </div>
       </aside>
     </section>
@@ -72,26 +89,28 @@
     <section class="ticket-activity-grid">
       <article class="workspace-card comments-panel">
         <div class="table-toolbar">
-          <h3>Comments</h3>
-          <span class="status-badge">{{ currentTicket.comments.length }} total</span>
+          <h3>{{ 'ticketDetail.comments' | translate }}</h3>
+          <span class="status-badge">{{ 'common.totalCount' | translate: { count: currentTicket.comments.length } }}</span>
         </div>
 
         <form class="comment-form" [formGroup]="commentForm" (ngSubmit)="submitComment()" novalidate>
-          <label for="ticket-comment">Add comment</label>
+          <label for="ticket-comment">{{ 'ticketDetail.addComment' | translate }}</label>
           <textarea
             id="ticket-comment"
             formControlName="text"
             rows="4"
-            placeholder="Write an update for this ticket"
+            [placeholder]="'ticketDetail.commentPlaceholder' | translate"
             [class.is-invalid]="commentForm.controls.text.invalid && commentForm.controls.text.touched"
           ></textarea>
           @if (commentForm.controls.text.invalid && commentForm.controls.text.touched) {
-            <p class="field-error">Enter a comment before posting.</p>
+            <p class="field-error">{{ 'ticketDetail.commentRequired' | translate }}</p>
           }
           @if (commentError()) {
             <p class="form-error" role="alert">{{ commentError() }}</p>
           }
-          <button class="action-button" type="submit" [disabled]="isPostingComment()">Post comment</button>
+          <button class="action-button" type="submit" [disabled]="isPostingComment()">
+            {{ 'ticketDetail.postComment' | translate }}
+          </button>
         </form>
 
         <div class="comment-list">
@@ -104,7 +123,7 @@
                 <div>
                   <header>
                     <strong>{{ userLabel(comment.author) }}</strong>
-                    <span>{{ comment.createdAt | date: 'medium' }}</span>
+                    <span>{{ comment.createdAt | date: 'medium' : undefined : i18n.dateLocale() }}</span>
                   </header>
                   <p>{{ comment.text }}</p>
                 </div>
@@ -112,8 +131,8 @@
             }
           } @else {
             <div class="empty-inline">
-              <strong>No comments yet</strong>
-              <span>Post the first update for this ticket.</span>
+              <strong>{{ 'ticketDetail.noComments' | translate }}</strong>
+              <span>{{ 'ticketDetail.firstUpdate' | translate }}</span>
             </div>
           }
         </div>
@@ -121,17 +140,17 @@
 
       <article class="workspace-card attachments-panel">
         <div class="table-toolbar">
-          <h3>Attachments</h3>
-          <span class="status-badge">{{ currentTicket.attachments.length }} total</span>
+          <h3>{{ 'ticketDetail.attachments' | translate }}</h3>
+          <span class="status-badge">{{ 'common.totalCount' | translate: { count: currentTicket.attachments.length } }}</span>
         </div>
 
         <div class="attachment-upload">
-          <label for="ticket-attachment">Upload screenshot</label>
+          <label for="ticket-attachment">{{ 'ticketDetail.uploadScreenshot' | translate }}</label>
           <div class="file-picker">
             <input id="ticket-attachment" type="file" (change)="selectAttachment($event)" />
             <span>{{ selectedFileLabel() }}</span>
             <button class="action-button" type="button" [disabled]="isUploadingAttachment()" (click)="uploadAttachment()">
-              Upload
+              {{ 'ticketDetail.upload' | translate }}
             </button>
           </div>
           @if (attachmentError()) {
@@ -147,8 +166,8 @@
                   <strong>{{ attachment.fileName }}</strong>
                   <span>
                     {{ fileSizeLabel(attachment.fileSizeBytes) }}
-                    · uploaded by {{ userLabel(attachment.uploadedBy) }}
-                    · {{ attachment.uploadedAt | date: 'mediumDate' }}
+                    &middot; {{ 'ticketDetail.uploadedBy' | translate }} {{ userLabel(attachment.uploadedBy) }}
+                    &middot; {{ attachment.uploadedAt | date: 'mediumDate' : undefined : i18n.dateLocale() }}
                   </span>
                 </div>
                 <button
@@ -157,14 +176,14 @@
                   [disabled]="isDownloadingAttachmentId() === attachment.id"
                   (click)="downloadAttachment(attachment)"
                 >
-                  Download
+                  {{ 'ticketDetail.download' | translate }}
                 </button>
               </article>
             }
           } @else {
             <div class="empty-inline">
-              <strong>No attachments</strong>
-              <span>Upload screenshots or supporting images.</span>
+              <strong>{{ 'ticketDetail.noAttachments' | translate }}</strong>
+              <span>{{ 'ticketDetail.uploadHelp' | translate }}</span>
             </div>
           }
         </div>

@@ -1,10 +1,10 @@
 <div class="app-shell">
-  <aside class="app-sidebar" aria-label="Application navigation">
+  <aside class="app-sidebar" [attr.aria-label]="'layout.navigationAria' | translate">
     <a class="app-brand" routerLink="/app/dashboard">
       <span class="app-brand-mark" aria-hidden="true">BD</span>
       <span>
         <strong>BorroDesk</strong>
-        <small>Service desk</small>
+        <small>{{ 'common.serviceDesk' | translate }}</small>
       </span>
     </a>
 
@@ -15,8 +15,8 @@
           routerLinkActive="is-active"
           [routerLinkActiveOptions]="{ exact: true }"
         >
-          <span>{{ item.label }}</span>
-          <small>{{ item.description }}</small>
+          <span>{{ item.labelKey | translate }}</span>
+          <small>{{ item.descriptionKey | translate }}</small>
         </a>
       }
     </nav>
@@ -36,15 +36,29 @@
   <section class="app-workspace">
     <header class="app-topbar">
       <div>
-        <p class="workspace-eyebrow">Workspace</p>
-        <h1>Operations console</h1>
+        <p class="workspace-eyebrow">{{ 'common.workspace' | translate }}</p>
+        <h1>{{ 'layout.operationsConsole' | translate }}</h1>
       </div>
 
       <div class="topbar-actions">
+        <label class="language-select" for="workspace-language">
+          <span>{{ 'common.language' | translate }}</span>
+          <select
+            id="workspace-language"
+            [value]="i18n.language()"
+            (change)="i18n.setLanguage($any($event.target).value)"
+          >
+            @for (language of i18n.availableLanguages; track language.code) {
+              <option [value]="language.code">{{ language.label }}</option>
+            }
+          </select>
+        </label>
         @if (session(); as currentSession) {
-          <span class="profile-chip">{{ currentSession.roles.join(', ') }}</span>
+          <span class="profile-chip">{{ roleLabel() }}</span>
         }
-        <button class="text-button" type="button" (click)="signOut()">Sign out</button>
+        <button class="text-button" type="button" (click)="signOut()">
+          {{ 'common.signOut' | translate }}
+        </button>
       </div>
     </header>
 

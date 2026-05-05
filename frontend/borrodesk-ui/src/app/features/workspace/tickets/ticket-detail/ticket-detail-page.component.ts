@@ -4,6 +4,8 @@ import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
+import { LanguageService } from '../../../../core/i18n/language.service';
+import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 import {
   TicketAttachmentResponse,
   TicketCommentResponse,
@@ -14,24 +16,24 @@ import {
   TicketsService
 } from '../../../../core/tickets/tickets.service';
 
-const ticketStatusLabels: Record<TicketStatus, string> = {
-  [TicketStatus.Open]: 'Open',
-  [TicketStatus.InProgress]: 'In progress',
-  [TicketStatus.Resolved]: 'Resolved',
-  [TicketStatus.Closed]: 'Closed',
-  [TicketStatus.Reopened]: 'Reopened'
+const ticketStatusTranslationKeys: Record<TicketStatus, string> = {
+  [TicketStatus.Open]: 'ticketStatus.open',
+  [TicketStatus.InProgress]: 'ticketStatus.inProgress',
+  [TicketStatus.Resolved]: 'ticketStatus.resolved',
+  [TicketStatus.Closed]: 'ticketStatus.closed',
+  [TicketStatus.Reopened]: 'ticketStatus.reopened'
 };
 
-const ticketPriorityLabels: Record<TicketPriority, string> = {
-  [TicketPriority.Low]: 'Low',
-  [TicketPriority.Normal]: 'Normal',
-  [TicketPriority.High]: 'High',
-  [TicketPriority.Urgent]: 'Urgent'
+const ticketPriorityTranslationKeys: Record<TicketPriority, string> = {
+  [TicketPriority.Low]: 'ticketPriority.low',
+  [TicketPriority.Normal]: 'ticketPriority.normal',
+  [TicketPriority.High]: 'ticketPriority.high',
+  [TicketPriority.Urgent]: 'ticketPriority.urgent'
 };
 
 @Component({
   selector: 'app-ticket-detail-page',
-  imports: [DatePipe, ReactiveFormsModule, RouterLink],
+  imports: [DatePipe, ReactiveFormsModule, RouterLink, TranslatePipe],
   templateUrl: './ticket-detail-page.component.html'
 })
 export class TicketDetailPageComponent implements OnInit, OnDestroy {
@@ -39,6 +41,7 @@ export class TicketDetailPageComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly ticketsService = inject(TicketsService);
   private readonly objectUrls: string[] = [];
+  protected readonly i18n = inject(LanguageService);
 
   protected readonly attachmentError = signal('');
   protected readonly commentError = signal('');
@@ -55,14 +58,16 @@ export class TicketDetailPageComponent implements OnInit, OnDestroy {
     text: ['', [Validators.required]]
   });
 
-  protected readonly selectedFileLabel = computed(() => this.selectedFile()?.name || 'No file selected');
+  protected readonly selectedFileLabel = computed(() => (
+    this.selectedFile()?.name || this.i18n.translate('ticketDetail.noFileSelected')
+  ));
 
   ngOnInit(): void {
     const routeId = this.route.snapshot.paramMap.get('id');
     const parsedId = Number(routeId);
 
     if (!Number.isInteger(parsedId) || parsedId <= 0) {
-      this.detailError.set('Ticket id is invalid.');
+      this.detailError.set(this.i18n.translate('ticketDetail.ticketIdInvalid'));
       return;
     }
 
@@ -105,7 +110,10 @@ export class TicketDetailPageComponent implements OnInit, OnDestroy {
             : ticket);
         },
         error: (error: unknown) => {
-          this.commentError.set(this.resolveTicketError(error, 'Comment could not be added.'));
+          this.commentError.set(this.resolveTicketError(
+            error,
+            this.i18n.translate('ticketDetail.commentAddFailed')
+          ));
         }
       });
   }
@@ -122,7 +130,7 @@ export class TicketDetailPageComponent implements OnInit, OnDestroy {
     this.attachmentError.set('');
 
     if (!ticketId || !file) {
-      this.attachmentError.set('Choose a file before uploading.');
+      this.attachmentError.set(this.i18n.translate('ticketDetail.chooseFile'));
       return;
     }
 
@@ -138,7 +146,10 @@ export class TicketDetailPageComponent implements OnInit, OnDestroy {
             : ticket);
         },
         error: (error: unknown) => {
-          this.attachmentError.set(this.resolveTicketError(error, 'Attachment could not be uploaded.'));
+          this.attachmentError.set(this.resolveTicketError(
+            error,
+            this.i18n.translate('ticketDetail.attachmentUploadFailed')
+          ));
         }
       });
   }
@@ -165,17 +176,24 @@ export class TicketDetailPageComponent implements OnInit, OnDestroy {
           link.click();
         },
         error: (error: unknown) => {
-          this.attachmentError.set(this.resolveTicketError(error, 'Attachment could not be downloaded.'));
+          this.attachmentError.set(this.resolveTicketError(
+            error,
+            this.i18n.translate('ticketDetail.attachmentDownloadFailed')
+          ));
         }
       });
   }
 
   protected statusLabel(status: TicketStatus): string {
-    return ticketStatusLabels[status] ?? 'Unknown';
+    const translationKey = ticketStatusTranslationKeys[status];
+
+    return translationKey ? this.i18n.translate(translationKey) : this.i18n.translate('common.unknown');
   }
 
   protected priorityLabel(priority: TicketPriority): string {
-    return ticketPriorityLabels[priority] ?? 'Unknown';
+    const translationKey = ticketPriorityTranslationKeys[priority];
+
+    return translationKey ? this.i18n.translate(translationKey) : this.i18n.translate('common.unknown');
   }
 
   protected statusClass(status: TicketStatus): string {
@@ -188,10 +206,10 @@ export class TicketDetailPageComponent implements OnInit, OnDestroy {
 
   protected userLabel(user: TicketUserResponse | null): string {
     if (!user) {
-      return 'Unassigned';
+      return this.i18n.translate('common.unassigned');
     }
 
-    return user.userName || user.email || `User #${user.id}`;
+    return user.userName || user.email || this.i18n.translate('common.userNumber', { id: user.id });
   }
 
   protected fileSizeLabel(fileSizeBytes: number): string {
@@ -200,10 +218,10 @@ export class TicketDetailPageComponent implements OnInit, OnDestroy {
     }
 
     if (fileSizeBytes < 1024 * 1024) {
-      return `${(fileSizeBytes / 1024).toFixed(1)} KB`;
+      return `${this.formatFileNumber(fileSizeBytes / 1024)} KB`;
     }
 
-    return `${(fileSizeBytes / 1024 / 1024).toFixed(1)} MB`;
+    return `${this.formatFileNumber(fileSizeBytes / 1024 / 1024)} MB`;
   }
 
   protected trackAttachment(_index: number, attachment: TicketAttachmentResponse): number {
@@ -226,7 +244,10 @@ export class TicketDetailPageComponent implements OnInit, OnDestroy {
           this.ticket.set(ticket);
         },
         error: (error: unknown) => {
-          this.detailError.set(this.resolveTicketError(error, 'Ticket could not be loaded.'));
+          this.detailError.set(this.resolveTicketError(
+            error,
+            this.i18n.translate('ticketDetail.detailLoadFailed')
+          ));
         }
       });
   }
@@ -234,24 +255,31 @@ export class TicketDetailPageComponent implements OnInit, OnDestroy {
   private resolveTicketError(error: unknown, fallback: string): string {
     if (error instanceof HttpErrorResponse) {
       if (error.status === 0) {
-        return 'Cannot reach the BorroDesk API. Start the backend and try again.';
+        return this.i18n.translate('common.apiUnavailable');
       }
 
       if (error.status === 401) {
-        return 'Your session expired. Sign in again to continue.';
+        return this.i18n.translate('ticketForm.sessionExpired');
       }
 
       if (error.status === 403) {
-        return 'Your role does not have permission for this action.';
+        return this.i18n.translate('ticketDetail.permissionDenied');
       }
 
       if (error.status === 404) {
-        return 'Ticket or attachment was not found.';
+        return this.i18n.translate('ticketDetail.ticketAttachmentNotFound');
       }
 
       return error.error?.detail || error.error?.title || fallback;
     }
 
     return fallback;
+  }
+
+  private formatFileNumber(value: number): string {
+    return new Intl.NumberFormat(this.i18n.dateLocale(), {
+      maximumFractionDigits: 1,
+      minimumFractionDigits: 1
+    }).format(value);
   }
 }

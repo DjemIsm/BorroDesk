@@ -1,27 +1,27 @@
 <main class="workspace-page">
   <section class="page-heading">
     <div>
-      <p class="workspace-eyebrow">Personal queue</p>
-      <h2>My tickets</h2>
+      <p class="workspace-eyebrow">{{ 'myTickets.personalQueue' | translate }}</p>
+      <h2>{{ 'myTickets.title' | translate }}</h2>
     </div>
-    <span class="status-badge">6 assigned</span>
+    <span class="status-badge">{{ 'myTickets.status' | translate }}</span>
   </section>
 
   <section class="content-grid">
     <article class="workspace-card">
-      <h3>Due soon</h3>
+      <h3>{{ 'myTickets.dueSoon' | translate }}</h3>
       <div class="compact-list">
-        <span>Confirm warranty replacement</span>
-        <span>Review workstation access</span>
-        <span>Update invoice attachment</span>
+        <span>{{ 'myTickets.confirmWarrantyReplacement' | translate }}</span>
+        <span>{{ 'myTickets.reviewWorkstationAccess' | translate }}</span>
+        <span>{{ 'myTickets.updateInvoiceAttachment' | translate }}</span>
       </div>
     </article>
     <article class="workspace-card">
-      <h3>Waiting</h3>
+      <h3>{{ 'myTickets.waiting' | translate }}</h3>
       <div class="compact-list muted">
-        <span>Manager approval</span>
-        <span>Customer screenshot</span>
-        <span>Vendor response</span>
+        <span>{{ 'myTickets.managerApproval' | translate }}</span>
+        <span>{{ 'myTickets.customerScreenshot' | translate }}</span>
+        <span>{{ 'myTickets.vendorResponse' | translate }}</span>
       </div>
     </article>
   </section>

@@ -1,40 +1,40 @@
 import { ApplicationRole, applicationRoles } from '../../core/auth/auth.service';
 
 export interface AppNavigationItem {
-  label: string;
+  labelKey: string;
   route: string;
-  description: string;
+  descriptionKey: string;
   roles?: readonly ApplicationRole[];
 }
 
 export const appNavigation: readonly AppNavigationItem[] = [
   {
-    label: 'Dashboard',
+    labelKey: 'nav.dashboard.label',
     route: '/app/dashboard',
-    description: 'Workspace overview'
+    descriptionKey: 'nav.dashboard.description'
   },
   {
-    label: 'Tickets',
+    labelKey: 'nav.tickets.label',
     route: '/app/tickets',
-    description: 'All visible requests',
+    descriptionKey: 'nav.tickets.description',
     roles: [applicationRoles.user, applicationRoles.support, applicationRoles.admin]
   },
   {
-    label: 'My tickets',
+    labelKey: 'nav.myTickets.label',
     route: '/app/my-tickets',
-    description: 'Requests assigned to you',
+    descriptionKey: 'nav.myTickets.description',
     roles: [applicationRoles.user, applicationRoles.support, applicationRoles.admin]
   },
   {
-    label: 'Team queue',
+    labelKey: 'nav.teamQueue.label',
     route: '/app/team-queue',
-    description: 'Support workload',
+    descriptionKey: 'nav.teamQueue.description',
     roles: [applicationRoles.support, applicationRoles.admin]
   },
   {
-    label: 'User admin',
+    labelKey: 'nav.adminUsers.label',
     route: '/app/admin/users',
-    description: 'Accounts and roles',
+    descriptionKey: 'nav.adminUsers.description',
     roles: [applicationRoles.admin]
   }
 ];

@@ -1,57 +1,57 @@
 <main class="workspace-page">
   <section class="page-heading">
     <div>
-      <p class="workspace-eyebrow">Requests</p>
-      <h2>Tickets</h2>
+      <p class="workspace-eyebrow">{{ 'tickets.requests' | translate }}</p>
+      <h2>{{ 'tickets.title' | translate }}</h2>
     </div>
     <div class="page-actions">
       <span class="status-badge">{{ resultSummary() }}</span>
-      <a class="action-button" routerLink="/app/tickets/new">New ticket</a>
+      <a class="action-button" routerLink="/app/tickets/new">{{ 'tickets.newTicket' | translate }}</a>
     </div>
   </section>
 
   <form class="ticket-filters workspace-card" [formGroup]="filterForm" (ngSubmit)="applyFilters()">
     <div class="filter-field search-field">
-      <label for="ticket-search">Search</label>
+      <label for="ticket-search">{{ 'tickets.search' | translate }}</label>
       <input
         id="ticket-search"
         type="search"
         formControlName="search"
-        placeholder="Title, requester, assignee"
+        [placeholder]="'tickets.searchPlaceholder' | translate"
       />
     </div>
 
     <div class="filter-field">
-      <label for="ticket-status">Status</label>
+      <label for="ticket-status">{{ 'tickets.status' | translate }}</label>
       <select id="ticket-status" formControlName="status">
-        <option value="">Any status</option>
-        @for (status of statusOptions; track status.value) {
+        <option value="">{{ 'tickets.anyStatus' | translate }}</option>
+        @for (status of statusOptions(); track status.value) {
           <option [value]="status.value">{{ status.label }}</option>
         }
       </select>
     </div>
 
     <div class="filter-field">
-      <label for="ticket-priority">Priority</label>
+      <label for="ticket-priority">{{ 'tickets.priority' | translate }}</label>
       <select id="ticket-priority" formControlName="priority">
-        <option value="">Any priority</option>
-        @for (priority of priorityOptions; track priority.value) {
+        <option value="">{{ 'tickets.anyPriority' | translate }}</option>
+        @for (priority of priorityOptions(); track priority.value) {
           <option [value]="priority.value">{{ priority.label }}</option>
         }
       </select>
     </div>
 
     <div class="filter-field">
-      <label for="ticket-ownership">Scope</label>
+      <label for="ticket-ownership">{{ 'tickets.scope' | translate }}</label>
       <select id="ticket-ownership" formControlName="ownership">
-        <option value="all">All visible tickets</option>
-        <option value="assignedToMe">Assigned to me</option>
-        <option value="createdByMe">Created by me</option>
+        <option value="all">{{ 'tickets.allVisible' | translate }}</option>
+        <option value="assignedToMe">{{ 'tickets.assignedToMe' | translate }}</option>
+        <option value="createdByMe">{{ 'tickets.createdByMe' | translate }}</option>
       </select>
     </div>
 
     <div class="filter-field">
-      <label for="ticket-page-size">Rows</label>
+      <label for="ticket-page-size">{{ 'tickets.rows' | translate }}</label>
       <select id="ticket-page-size" formControlName="pageSize" (change)="applyFilters()">
         @for (pageSize of pageSizeOptions; track pageSize) {
           <option [value]="pageSize">{{ pageSize }}</option>
@@ -60,8 +60,8 @@
     </div>
 
     <div class="filter-actions">
-      <button class="action-button" type="submit" [disabled]="isLoading()">Apply</button>
-      <button class="text-button" type="button" (click)="resetFilters()">Reset</button>
+      <button class="action-button" type="submit" [disabled]="isLoading()">{{ 'tickets.apply' | translate }}</button>
+      <button class="text-button" type="button" (click)="resetFilters()">{{ 'tickets.reset' | translate }}</button>
     </div>
   </form>
 
@@ -71,27 +71,27 @@
 
   <section class="workspace-card">
     <div class="table-toolbar">
-      <strong>Ticket list</strong>
+      <strong>{{ 'tickets.list' | translate }}</strong>
       @if (isLoading()) {
-        <span class="loading-label">Loading tickets</span>
+        <span class="loading-label">{{ 'tickets.loading' | translate }}</span>
       }
     </div>
 
     <div class="ticket-table ticket-list-table">
       <div class="ticket-table-row table-header">
         <span>ID</span>
-        <span>Subject</span>
-        <span>Status</span>
-        <span>Priority</span>
-        <span>Assignee</span>
-        <span>Created</span>
-        <span>Actions</span>
+        <span>{{ 'tickets.subject' | translate }}</span>
+        <span>{{ 'tickets.status' | translate }}</span>
+        <span>{{ 'tickets.priority' | translate }}</span>
+        <span>{{ 'tickets.assignee' | translate }}</span>
+        <span>{{ 'tickets.created' | translate }}</span>
+        <span>{{ 'tickets.actions' | translate }}</span>
       </div>
 
       @if (isLoading() && tickets().length === 0) {
         <div class="table-empty">
-          <strong>Loading tickets</strong>
-          <span>Fetching the latest results from BorroDesk.</span>
+          <strong>{{ 'tickets.loading' | translate }}</strong>
+          <span>{{ 'tickets.fetchingLatest' | translate }}</span>
         </div>
       } @else if (tickets().length > 0) {
         @for (ticket of tickets(); track ticket.id) {
@@ -109,31 +109,33 @@
               <mark [class]="priorityClass(ticket.priority)">{{ priorityLabel(ticket.priority) }}</mark>
             </span>
             <span>{{ userLabel(ticket.assignedTo) }}</span>
-            <span>{{ ticket.createdAt | date: 'mediumDate' }}</span>
+            <span>{{ ticket.createdAt | date: 'mediumDate' : undefined : i18n.dateLocale() }}</span>
             <span class="row-actions">
-              <a class="row-action" [routerLink]="['/app/tickets', ticket.id]">View</a>
+              <a class="row-action" [routerLink]="['/app/tickets', ticket.id]">{{ 'tickets.view' | translate }}</a>
               @if (ticket.canEdit) {
-                <a class="row-action" [routerLink]="['/app/tickets', ticket.id, 'edit']">Edit</a>
+                <a class="row-action" [routerLink]="['/app/tickets', ticket.id, 'edit']">
+                  {{ 'tickets.edit' | translate }}
+                </a>
               }
               @if (ticket.canAssign) {
-                <button class="row-action" type="button">Assign</button>
+                <button class="row-action" type="button">{{ 'tickets.assign' | translate }}</button>
               }
             </span>
           </div>
         }
       } @else {
         <div class="table-empty">
-          <strong>No tickets found</strong>
-          <span>Try changing the search text, filters, or page.</span>
+          <strong>{{ 'tickets.noTickets' | translate }}</strong>
+          <span>{{ 'tickets.tryChangingFilters' | translate }}</span>
         </div>
       }
     </div>
 
-    <div class="pagination-bar" aria-label="Ticket pagination">
+    <div class="pagination-bar" [attr.aria-label]="'tickets.paginationAria' | translate">
       <span>{{ resultSummary() }}</span>
       <div class="pagination-actions">
         <button class="text-button" type="button" [disabled]="!hasPreviousPage()" (click)="goToPage(1)">
-          First
+          {{ 'tickets.first' | translate }}
         </button>
         <button
           class="text-button"
@@ -141,16 +143,18 @@
           [disabled]="!hasPreviousPage()"
           (click)="goToPage(pageNumber() - 1)"
         >
-          Previous
+          {{ 'tickets.previous' | translate }}
         </button>
-        <span class="page-indicator">Page {{ pageNumber() }} of {{ totalPages() || 1 }}</span>
+        <span class="page-indicator">
+          {{ 'tickets.pageIndicator' | translate: { page: pageNumber(), total: totalPages() || 1 } }}
+        </span>
         <button
           class="text-button"
           type="button"
           [disabled]="!hasNextPage()"
           (click)="goToPage(pageNumber() + 1)"
         >
-          Next
+          {{ 'tickets.next' | translate }}
         </button>
         <button
           class="text-button"
@@ -158,7 +162,7 @@
           [disabled]="!hasNextPage()"
           (click)="goToPage(totalPages())"
         >
-          Last
+          {{ 'tickets.last' | translate }}
         </button>
       </div>
     </div>

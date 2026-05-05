@@ -1,27 +1,27 @@
 <main class="workspace-page">
   <section class="page-heading">
     <div>
-      <p class="workspace-eyebrow">Support role</p>
-      <h2>Team queue</h2>
+      <p class="workspace-eyebrow">{{ 'teamQueue.supportRole' | translate }}</p>
+      <h2>{{ 'teamQueue.title' | translate }}</h2>
     </div>
-    <span class="status-badge">Support and Admin</span>
+    <span class="status-badge">{{ 'teamQueue.supportAndAdmin' | translate }}</span>
   </section>
 
   <section class="content-grid">
     <article class="workspace-card">
-      <h3>Queue load</h3>
+      <h3>{{ 'teamQueue.queueLoad' | translate }}</h3>
       <div class="coverage-bars">
-        <span style="--bar-size: 74%">New</span>
-        <span style="--bar-size: 58%">In progress</span>
-        <span style="--bar-size: 34%">Escalated</span>
+        <span style="--bar-size: 74%">{{ 'teamQueue.new' | translate }}</span>
+        <span style="--bar-size: 58%">{{ 'teamQueue.inProgress' | translate }}</span>
+        <span style="--bar-size: 34%">{{ 'teamQueue.escalated' | translate }}</span>
       </div>
     </article>
     <article class="workspace-card">
-      <h3>Assignments</h3>
+      <h3>{{ 'teamQueue.assignments' | translate }}</h3>
       <div class="compact-list">
-        <span>Finance queue: 4 open</span>
-        <span>IT queue: 8 open</span>
-        <span>Security queue: 3 open</span>
+        <span>{{ 'teamQueue.financeQueue' | translate }}</span>
+        <span>{{ 'teamQueue.itQueue' | translate }}</span>
+        <span>{{ 'teamQueue.securityQueue' | translate }}</span>
       </div>
     </article>
   </section>

@@ -1,7 +1,7 @@
 <main class="workspace-page">
   <section class="empty-state">
-    <p class="workspace-eyebrow">Access denied</p>
-    <h2>This area is not available for your role.</h2>
-    <a class="action-link" routerLink="/app/dashboard">Back to dashboard</a>
+    <p class="workspace-eyebrow">{{ 'forbidden.accessDenied' | translate }}</p>
+    <h2>{{ 'forbidden.message' | translate }}</h2>
+    <a class="action-link" routerLink="/app/dashboard">{{ 'forbidden.backToDashboard' | translate }}</a>
   </section>
 </main>

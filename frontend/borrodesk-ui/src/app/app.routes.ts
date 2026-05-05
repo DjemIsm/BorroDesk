@@ -17,7 +17,7 @@ export const routes: Routes = [
     path: 'login',
     canActivate: [loginRedirectGuard],
     component: LoginComponent,
-    title: 'Sign in | BorroDesk'
+    title: 'routes.login'
   },
   {
     path: 'app',
@@ -28,7 +28,7 @@ export const routes: Routes = [
       {
         path: 'dashboard',
         component: DashboardPageComponent,
-        title: 'Dashboard | BorroDesk'
+        title: 'routes.dashboard'
       },
       {
         path: 'tickets',
@@ -37,7 +37,7 @@ export const routes: Routes = [
         data: {
           roles: [applicationRoles.user, applicationRoles.support, applicationRoles.admin]
         },
-        title: 'Tickets | BorroDesk'
+        title: 'routes.tickets'
       },
       {
         path: 'tickets/new',
@@ -46,7 +46,7 @@ export const routes: Routes = [
         data: {
           roles: [applicationRoles.user, applicationRoles.support, applicationRoles.admin]
         },
-        title: 'Create ticket | BorroDesk'
+        title: 'routes.createTicket'
       },
       {
         path: 'tickets/:id/edit',
@@ -55,7 +55,7 @@ export const routes: Routes = [
         data: {
           roles: [applicationRoles.user, applicationRoles.support, applicationRoles.admin]
         },
-        title: 'Edit ticket | BorroDesk'
+        title: 'routes.editTicket'
       },
       {
         path: 'tickets/:id',
@@ -64,7 +64,7 @@ export const routes: Routes = [
         data: {
           roles: [applicationRoles.user, applicationRoles.support, applicationRoles.admin]
         },
-        title: 'Ticket detail | BorroDesk'
+        title: 'routes.ticketDetail'
       },
       {
         path: 'my-tickets',
@@ -73,7 +73,7 @@ export const routes: Routes = [
         data: {
           roles: [applicationRoles.user, applicationRoles.support, applicationRoles.admin]
         },
-        title: 'My tickets | BorroDesk'
+        title: 'routes.myTickets'
       },
       {
         path: 'team-queue',
@@ -82,7 +82,7 @@ export const routes: Routes = [
         data: {
           roles: [applicationRoles.support, applicationRoles.admin]
         },
-        title: 'Team queue | BorroDesk'
+        title: 'routes.teamQueue'
       },
       {
         path: 'admin/users',
@@ -91,12 +91,12 @@ export const routes: Routes = [
         data: {
           roles: [applicationRoles.admin]
         },
-        title: 'User admin | BorroDesk'
+        title: 'routes.userAdmin'
       },
       {
         path: 'forbidden',
         component: ForbiddenPageComponent,
-        title: 'Access denied | BorroDesk'
+        title: 'routes.accessDenied'
       },
       {
         path: '',
