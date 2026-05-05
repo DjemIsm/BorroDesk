@@ -798,6 +798,11 @@ a {
   align-items: end;
 }
 
+.admin-user-filters {
+  grid-template-columns: minmax(240px, 1.8fr) repeat(3, minmax(140px, 1fr)) auto;
+  align-items: end;
+}
+
 .filter-field {
   display: grid;
   gap: 8px;
@@ -825,6 +830,10 @@ a {
 .filter-field select:focus {
   border-color: #1f766b;
   box-shadow: 0 0 0 3px rgba(47, 133, 120, 0.18);
+}
+
+.filter-field .is-invalid {
+  border-color: #ba3f2d;
 }
 
 .filter-actions {
@@ -855,9 +864,34 @@ a {
   grid-template-columns: 88px minmax(240px, 2fr) 130px 120px minmax(170px, 1fr) 140px 120px;
 }
 
+.admin-users-table .ticket-table-row {
+  grid-template-columns: minmax(240px, 1.5fr) minmax(180px, 1fr) 120px 150px minmax(180px, 1fr);
+}
+
 .ticket-title-cell {
   color: #18211f;
   font-weight: 800;
+}
+
+.admin-user-cell {
+  display: grid;
+  gap: 3px;
+}
+
+.admin-user-cell strong,
+.admin-user-cell small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-user-cell strong {
+  color: #18211f;
+}
+
+.admin-user-cell small {
+  color: #66756f;
+  font-size: 0.8rem;
 }
 
 .table-link {
@@ -900,6 +934,17 @@ a {
   color: #56645f;
 }
 
+.user-active {
+  border-color: #b9d9d2;
+  background: #eaf7f3;
+}
+
+.user-inactive {
+  border-color: #d4ddda;
+  background: #f1f4f3;
+  color: #56645f;
+}
+
 .priority-low {
   border-color: #d4ddda;
   background: #f1f4f3;
@@ -936,6 +981,16 @@ a {
   font-size: 0.78rem;
   font-weight: 800;
   padding: 0 10px;
+}
+
+.row-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.danger-action {
+  border-color: #efc2bb;
+  color: #8f2f24;
 }
 
 .table-empty {
@@ -1086,6 +1141,40 @@ a {
   gap: 10px;
   border-top: 1px solid #e0e7e4;
   padding-top: 18px;
+}
+
+.admin-user-editor {
+  gap: 22px;
+}
+
+.admin-user-form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(150px, 0.6fr);
+  gap: 16px;
+  align-items: end;
+}
+
+.admin-active-toggle {
+  min-height: 42px;
+  align-items: center;
+}
+
+.role-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin: 0;
+  border: 1px solid #e0e7e4;
+  border-radius: 8px;
+  background: #fbfcfb;
+  padding: 14px;
+}
+
+.role-picker legend {
+  color: #40504a;
+  font-size: 0.84rem;
+  font-weight: 800;
+  padding: 0 6px;
 }
 
 .ticket-detail-grid,
@@ -1475,6 +1564,8 @@ a {
   }
 
   .ticket-filters,
+  .admin-user-filters,
+  .admin-user-form-grid,
   .editor-grid,
   .ticket-form-summary,
   .detail-meta-grid,

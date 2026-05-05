@@ -4,28 +4,245 @@
       <p class="workspace-eyebrow">{{ 'adminUsers.adminRole' | translate }}</p>
       <h2>{{ 'adminUsers.title' | translate }}</h2>
     </div>
-    <button class="action-button" type="button">{{ 'adminUsers.createUser' | translate }}</button>
+    <div class="page-actions">
+      <span class="status-badge">{{ resultSummary() }}</span>
+      <button class="action-button" type="button" (click)="openCreateForm()">
+        {{ 'adminUsers.createUser' | translate }}
+      </button>
+    </div>
   </section>
 
+  <form class="admin-user-filters workspace-card" [formGroup]="filterForm" (ngSubmit)="applyFilters()">
+    <div class="filter-field search-field">
+      <label for="admin-user-search">{{ 'adminUsers.search' | translate }}</label>
+      <input
+        id="admin-user-search"
+        type="search"
+        formControlName="search"
+        [placeholder]="'adminUsers.searchPlaceholder' | translate"
+      />
+    </div>
+
+    <div class="filter-field">
+      <label for="admin-user-role">{{ 'adminUsers.role' | translate }}</label>
+      <select id="admin-user-role" formControlName="role">
+        <option value="">{{ 'adminUsers.allRoles' | translate }}</option>
+        @for (role of roleOptions(); track role.value) {
+          <option [value]="role.value">{{ role.label }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="filter-field">
+      <label for="admin-user-status">{{ 'adminUsers.status' | translate }}</label>
+      <select id="admin-user-status" formControlName="status">
+        <option value="all">{{ 'adminUsers.allStatuses' | translate }}</option>
+        <option value="active">{{ 'adminUsers.active' | translate }}</option>
+        <option value="inactive">{{ 'adminUsers.inactive' | translate }}</option>
+      </select>
+    </div>
+
+    <div class="filter-field">
+      <label for="admin-user-page-size">{{ 'tickets.rows' | translate }}</label>
+      <select id="admin-user-page-size" formControlName="pageSize" (change)="applyFilters()">
+        @for (pageSize of pageSizeOptions; track pageSize) {
+          <option [value]="pageSize">{{ pageSize }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="filter-actions">
+      <button class="action-button" type="submit" [disabled]="isLoading()">{{ 'tickets.apply' | translate }}</button>
+      <button class="text-button" type="button" (click)="resetFilters()">{{ 'tickets.reset' | translate }}</button>
+    </div>
+  </form>
+
+  @if (isEditorOpen()) {
+    <form class="workspace-card admin-user-editor" [formGroup]="userForm" (ngSubmit)="submitUser()">
+      <div class="table-toolbar">
+        <strong>{{ editorTitle() }}</strong>
+        <button class="text-button" type="button" (click)="cancelEditor()">
+          {{ 'ticketForm.cancel' | translate }}
+        </button>
+      </div>
+
+      @if (formError()) {
+        <p class="form-error" role="alert">{{ formError() }}</p>
+      }
+
+      <div class="admin-user-form-grid">
+        <div class="filter-field">
+          <label for="admin-user-name">{{ 'adminUsers.userName' | translate }}</label>
+          <input
+            id="admin-user-name"
+            type="text"
+            formControlName="userName"
+            [class.is-invalid]="userForm.controls.userName.invalid && userForm.controls.userName.touched"
+          />
+          @if (userForm.controls.userName.hasError('required') && userForm.controls.userName.touched) {
+            <p class="field-error">{{ 'adminUsers.userNameRequired' | translate }}</p>
+          }
+        </div>
+
+        <div class="filter-field">
+          <label for="admin-user-email">{{ 'adminUsers.email' | translate }}</label>
+          <input
+            id="admin-user-email"
+            type="email"
+            formControlName="email"
+            [class.is-invalid]="userForm.controls.email.invalid && userForm.controls.email.touched"
+          />
+          @if (userForm.controls.email.hasError('required') && userForm.controls.email.touched) {
+            <p class="field-error">{{ 'adminUsers.emailRequired' | translate }}</p>
+          } @else if (userForm.controls.email.invalid && userForm.controls.email.touched) {
+            <p class="field-error">{{ 'adminUsers.emailInvalid' | translate }}</p>
+          }
+        </div>
+
+        <div class="filter-field">
+          <label for="admin-user-password">{{ 'login.password' | translate }}</label>
+          <input
+            id="admin-user-password"
+            type="password"
+            formControlName="password"
+            autocomplete="new-password"
+            [placeholder]="isEditMode() ? ('adminUsers.passwordResetPlaceholder' | translate) : ''"
+            [class.is-invalid]="userForm.controls.password.invalid && userForm.controls.password.touched"
+          />
+          @if (userForm.controls.password.hasError('required') && userForm.controls.password.touched) {
+            <p class="field-error">{{ 'adminUsers.passwordRequired' | translate }}</p>
+          } @else if (userForm.controls.password.invalid && userForm.controls.password.touched) {
+            <p class="field-error">{{ 'adminUsers.passwordInvalid' | translate }}</p>
+          }
+        </div>
+
+        <label class="check-line admin-active-toggle">
+          <input type="checkbox" formControlName="isActive" />
+          <span>{{ 'adminUsers.active' | translate }}</span>
+        </label>
+      </div>
+
+      <fieldset class="role-picker">
+        <legend>{{ 'adminUsers.roles' | translate }}</legend>
+        <label class="check-line">
+          <input type="checkbox" formControlName="roleUser" />
+          <span>{{ 'roles.user' | translate }}</span>
+        </label>
+        <label class="check-line">
+          <input type="checkbox" formControlName="roleSupport" />
+          <span>{{ 'roles.support' | translate }}</span>
+        </label>
+        <label class="check-line">
+          <input type="checkbox" formControlName="roleAdmin" />
+          <span>{{ 'roles.admin' | translate }}</span>
+        </label>
+      </fieldset>
+
+      <div class="editor-actions">
+        <button class="action-button" type="submit" [disabled]="isSaving()">{{ saveLabel() }}</button>
+        <button class="text-button" type="button" (click)="cancelEditor()" [disabled]="isSaving()">
+          {{ 'ticketForm.cancel' | translate }}
+        </button>
+      </div>
+    </form>
+  }
+
+  @if (errorMessage()) {
+    <p class="form-error" role="alert">{{ errorMessage() }}</p>
+  }
+
   <section class="workspace-card">
-    <div class="ticket-table">
+    <div class="table-toolbar">
+      <strong>{{ 'adminUsers.list' | translate }}</strong>
+      @if (isLoading()) {
+        <span class="loading-label">{{ 'adminUsers.loading' | translate }}</span>
+      }
+    </div>
+
+    <div class="ticket-table admin-users-table">
       <div class="ticket-table-row table-header">
         <span>{{ 'adminUsers.user' | translate }}</span>
-        <span>{{ 'adminUsers.role' | translate }}</span>
+        <span>{{ 'adminUsers.roles' | translate }}</span>
         <span>{{ 'adminUsers.status' | translate }}</span>
         <span>{{ 'adminUsers.lastActivity' | translate }}</span>
+        <span>{{ 'tickets.actions' | translate }}</span>
       </div>
-      <div class="ticket-table-row">
-        <span>admin@borrodesk.local</span>
-        <span>{{ 'roles.admin' | translate }}</span>
-        <span>{{ 'adminUsers.active' | translate }}</span>
-        <span>{{ 'adminUsers.today' | translate }}</span>
-      </div>
-      <div class="ticket-table-row">
-        <span>support@borrodesk.local</span>
-        <span>{{ 'roles.support' | translate }}</span>
-        <span>{{ 'adminUsers.active' | translate }}</span>
-        <span>{{ 'adminUsers.yesterday' | translate }}</span>
+
+      @if (isLoading() && users().length === 0) {
+        <div class="table-empty">
+          <strong>{{ 'adminUsers.loading' | translate }}</strong>
+          <span>{{ 'adminUsers.fetchingLatest' | translate }}</span>
+        </div>
+      } @else if (users().length > 0) {
+        @for (user of users(); track trackUser($index, user)) {
+          <div class="ticket-table-row">
+            <span class="admin-user-cell">
+              <strong>{{ userLabel(user) }}</strong>
+              <small>{{ user.email || ('common.notProvided' | translate) }}</small>
+            </span>
+            <span>{{ rolesLabel(user) }}</span>
+            <span>
+              <mark [class]="statusClass(user.isActive)">{{ statusLabel(user.isActive) }}</mark>
+            </span>
+            <span>{{ lastActivity(user) | date: 'mediumDate' : undefined : i18n.dateLocale() }}</span>
+            <span class="row-actions">
+              <button class="row-action" type="button" (click)="editUser(user)">
+                {{ 'tickets.edit' | translate }}
+              </button>
+              @if (user.isActive) {
+                <button
+                  class="row-action danger-action"
+                  type="button"
+                  [disabled]="deactivatingUserId() === user.id"
+                  (click)="deactivateUser(user)"
+                >
+                  {{ 'adminUsers.deactivate' | translate }}
+                </button>
+              }
+            </span>
+          </div>
+        }
+      } @else {
+        <div class="table-empty">
+          <strong>{{ 'adminUsers.noUsers' | translate }}</strong>
+          <span>{{ 'adminUsers.tryChangingFilters' | translate }}</span>
+        </div>
+      }
+    </div>
+
+    <div class="pagination-bar" [attr.aria-label]="'adminUsers.paginationAria' | translate">
+      <span>{{ resultSummary() }}</span>
+      <div class="pagination-actions">
+        <button class="text-button" type="button" [disabled]="!hasPreviousPage()" (click)="goToPage(1)">
+          {{ 'tickets.first' | translate }}
+        </button>
+        <button
+          class="text-button"
+          type="button"
+          [disabled]="!hasPreviousPage()"
+          (click)="goToPage(pageNumber() - 1)"
+        >
+          {{ 'tickets.previous' | translate }}
+        </button>
+        <span class="page-indicator">
+          {{ 'tickets.pageIndicator' | translate: { page: pageNumber(), total: totalPages() || 1 } }}
+        </span>
+        <button
+          class="text-button"
+          type="button"
+          [disabled]="!hasNextPage()"
+          (click)="goToPage(pageNumber() + 1)"
+        >
+          {{ 'tickets.next' | translate }}
+        </button>
+        <button
+          class="text-button"
+          type="button"
+          [disabled]="!hasNextPage()"
+          (click)="goToPage(totalPages())"
+        >
+          {{ 'tickets.last' | translate }}
+        </button>
       </div>
     </div>
   </section>
