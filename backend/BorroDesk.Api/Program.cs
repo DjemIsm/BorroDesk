@@ -168,7 +168,6 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapIdentityApi<User>();
 app.MapControllers();
 
 app.Run();
