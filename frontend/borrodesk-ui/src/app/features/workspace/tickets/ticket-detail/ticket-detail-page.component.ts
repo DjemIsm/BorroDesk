@@ -2,8 +2,9 @@ import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
+import { AuthService, applicationRoles } from '../../../../core/auth/auth.service';
 import { LanguageService } from '../../../../core/i18n/language.service';
 import { TranslatePipe } from '../../../../core/i18n/translate.pipe';
 import {
@@ -37,19 +38,27 @@ const ticketPriorityTranslationKeys: Record<TicketPriority, string> = {
   templateUrl: './ticket-detail-page.component.html'
 })
 export class TicketDetailPageComponent implements OnInit, OnDestroy {
+  private readonly authService = inject(AuthService);
   private readonly formBuilder = inject(NonNullableFormBuilder);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly ticketsService = inject(TicketsService);
   private readonly objectUrls: string[] = [];
   protected readonly i18n = inject(LanguageService);
 
+  protected readonly actionError = signal('');
+  protected readonly assignableUsers = signal<TicketUserResponse[]>([]);
   protected readonly attachmentError = signal('');
   protected readonly commentError = signal('');
   protected readonly detailError = signal('');
+  protected readonly isAssigning = signal(false);
+  protected readonly isChangingStatus = signal(false);
+  protected readonly isDeleting = signal(false);
   protected readonly isDownloadingAttachmentId = signal<number | null>(null);
   protected readonly isLoading = signal(false);
   protected readonly isPostingComment = signal(false);
   protected readonly isUploadingAttachment = signal(false);
+  protected readonly selectedAssigneeId = signal<number | null>(null);
   protected readonly selectedFile = signal<File | null>(null);
   protected readonly ticket = signal<TicketResponse | null>(null);
   protected readonly ticketId = signal<number | null>(null);
@@ -60,6 +69,10 @@ export class TicketDetailPageComponent implements OnInit, OnDestroy {
 
   protected readonly selectedFileLabel = computed(() => (
     this.selectedFile()?.name || this.i18n.translate('ticketDetail.noFileSelected')
+  ));
+  protected readonly canShowDelete = computed(() => (
+    Boolean(this.ticket()?.canDelete)
+    && this.authService.hasAnyRole([applicationRoles.support, applicationRoles.admin])
   ));
 
   ngOnInit(): void {
@@ -113,6 +126,92 @@ export class TicketDetailPageComponent implements OnInit, OnDestroy {
           this.commentError.set(this.resolveTicketError(
             error,
             this.i18n.translate('ticketDetail.commentAddFailed')
+          ));
+        }
+      });
+  }
+
+  protected changeStatus(status: TicketStatus): void {
+    const ticketId = this.ticketId();
+    this.actionError.set('');
+
+    if (!ticketId) {
+      return;
+    }
+
+    this.isChangingStatus.set(true);
+    this.ticketsService
+      .changeTicketStatus(ticketId, { status })
+      .pipe(finalize(() => this.isChangingStatus.set(false)))
+      .subscribe({
+        next: (ticket) => {
+          this.setTicket(ticket);
+        },
+        error: (error: unknown) => {
+          this.actionError.set(this.resolveTicketError(
+            error,
+            this.i18n.translate('ticketDetail.statusChangeFailed')
+          ));
+        }
+      });
+  }
+
+  protected selectAssignee(event: Event): void {
+    const value = (event.target as HTMLSelectElement).value;
+    const assigneeId = Number(value);
+
+    this.selectedAssigneeId.set(Number.isInteger(assigneeId) && assigneeId > 0 ? assigneeId : null);
+  }
+
+  protected assignTicket(): void {
+    const ticketId = this.ticketId();
+    this.actionError.set('');
+
+    if (!ticketId) {
+      return;
+    }
+
+    this.isAssigning.set(true);
+    this.ticketsService
+      .assignTicket(ticketId, { assignedToUserId: this.selectedAssigneeId() })
+      .pipe(finalize(() => this.isAssigning.set(false)))
+      .subscribe({
+        next: (ticket) => {
+          this.setTicket(ticket);
+        },
+        error: (error: unknown) => {
+          this.actionError.set(this.resolveTicketError(
+            error,
+            this.i18n.translate('ticketDetail.assignmentSaveFailed')
+          ));
+        }
+      });
+  }
+
+  protected deleteTicket(): void {
+    const ticketId = this.ticketId();
+    this.actionError.set('');
+
+    if (!ticketId) {
+      return;
+    }
+
+    if (!confirm('Delete this ticket?')) {
+      return;
+    }
+
+    this.isDeleting.set(true);
+    this.ticketsService
+      .deleteTicket(ticketId)
+      .pipe(finalize(() => this.isDeleting.set(false)))
+      .subscribe({
+        next: () => {
+          void this.router.navigate(['/app/tickets']);
+        },
+        error: (error: unknown) => {
+          this.actionError.set(this.resolveTicketError(
+            error,
+            this.i18n.translate('ticketDetail.deleteFailed')
           ));
         }
       });
@@ -232,6 +331,10 @@ export class TicketDetailPageComponent implements OnInit, OnDestroy {
     return comment.id;
   }
 
+  protected trackAssignableUser(_index: number, user: TicketUserResponse): number {
+    return user.id;
+  }
+
   private loadTicket(id: number): void {
     this.detailError.set('');
     this.isLoading.set(true);
@@ -241,7 +344,7 @@ export class TicketDetailPageComponent implements OnInit, OnDestroy {
       .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
         next: (ticket) => {
-          this.ticket.set(ticket);
+          this.setTicket(ticket);
         },
         error: (error: unknown) => {
           this.detailError.set(this.resolveTicketError(
@@ -250,6 +353,29 @@ export class TicketDetailPageComponent implements OnInit, OnDestroy {
           ));
         }
       });
+  }
+
+  private setTicket(ticket: TicketResponse): void {
+    this.ticket.set(ticket);
+    this.selectedAssigneeId.set(ticket.assignedTo?.id ?? null);
+
+    if (ticket.canAssign) {
+      this.loadAssignableUsers();
+    }
+  }
+
+  private loadAssignableUsers(): void {
+    this.ticketsService.getAssignableUsers().subscribe({
+      next: (users) => {
+        this.assignableUsers.set(users);
+      },
+      error: (error: unknown) => {
+        this.actionError.set(this.resolveTicketError(
+          error,
+          this.i18n.translate('ticketDetail.assignableUsersLoadFailed')
+        ));
+      }
+    });
   }
 
   private resolveTicketError(error: unknown, fallback: string): string {

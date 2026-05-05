@@ -4,25 +4,49 @@
       <p class="workspace-eyebrow">{{ 'dashboard.today' | translate }}</p>
       <h2>{{ 'dashboard.dashboard' | translate }}</h2>
     </div>
-    <span class="status-badge">{{ 'dashboard.live' | translate }}</span>
+    <span class="status-badge">
+      {{ (isLoading() ? 'dashboard.loadingMetrics' : 'dashboard.live') | translate }}
+    </span>
   </section>
 
-  <section class="metric-grid" [attr.aria-label]="'dashboard.metricsAria' | translate">
-    <article class="metric-tile">
+  @if (errorMessage()) {
+    <p class="form-error" role="alert">{{ errorMessage() | translate }}</p>
+  }
+
+  <section class="metric-grid" [attr.aria-label]="'dashboard.metricsAria' | translate" [attr.aria-busy]="isLoading()">
+    <a class="metric-tile" routerLink="/app/tickets" [queryParams]="{ status: ticketStatus.Open }">
       <span>{{ 'dashboard.openTickets' | translate }}</span>
-      <strong>18</strong>
+      <strong>
+        @if (isLoading()) {
+          ...
+        } @else {
+          {{ openTicketsCount() }}
+        }
+      </strong>
       <small>{{ 'dashboard.acrossActiveQueues' | translate }}</small>
-    </article>
-    <article class="metric-tile">
-      <span>{{ 'dashboard.assignedToMe' | translate }}</span>
-      <strong>6</strong>
+    </a>
+    <a class="metric-tile" routerLink="/app/tickets" [queryParams]="{ status: ticketStatus.InProgress }">
+      <span>{{ 'dashboard.inProgressTickets' | translate }}</span>
+      <strong>
+        @if (isLoading()) {
+          ...
+        } @else {
+          {{ inProgressTicketsCount() }}
+        }
+      </strong>
       <small>{{ 'dashboard.needsFollowUp' | translate }}</small>
-    </article>
-    <article class="metric-tile">
-      <span>{{ 'dashboard.slaHealth' | translate }}</span>
-      <strong>96%</strong>
-      <small>{{ 'dashboard.onTrackToday' | translate }}</small>
-    </article>
+    </a>
+    <a class="metric-tile" routerLink="/app/tickets" [queryParams]="{ priority: ticketPriority.High }">
+      <span>{{ 'dashboard.highPriorityTickets' | translate }}</span>
+      <strong>
+        @if (isLoading()) {
+          ...
+        } @else {
+          {{ highPriorityTicketsCount() }}
+        }
+      </strong>
+      <small>{{ 'dashboard.priorityQueue' | translate }}</small>
+    </a>
   </section>
 
   <section class="content-grid">
@@ -37,9 +61,9 @@
     <article class="workspace-card">
       <h3>{{ 'dashboard.teamCoverage' | translate }}</h3>
       <div class="coverage-bars">
-        <span style="--bar-size: 82%">{{ 'dashboard.support' | translate }}</span>
-        <span style="--bar-size: 64%">{{ 'dashboard.finance' | translate }}</span>
-        <span style="--bar-size: 48%">{{ 'dashboard.security' | translate }}</span>
+        <span>{{ 'dashboard.support' | translate }}</span>
+        <span>{{ 'dashboard.finance' | translate }}</span>
+        <span>{{ 'dashboard.security' | translate }}</span>
       </div>
     </article>
   </section>

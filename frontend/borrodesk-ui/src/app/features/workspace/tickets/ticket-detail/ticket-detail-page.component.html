@@ -10,6 +10,16 @@
           {{ 'ticketDetail.editTicket' | translate }}
         </a>
       }
+      @if (canShowDelete()) {
+        <button
+          class="text-button danger-action"
+          type="button"
+          [disabled]="isDeleting()"
+          (click)="deleteTicket()"
+        >
+          {{ 'ticketDetail.actionDelete' | translate }}
+        </button>
+      }
       <a class="text-button link-button" routerLink="/app/tickets">{{ 'ticketDetail.backToTickets' | translate }}</a>
     </div>
   </section>
@@ -83,6 +93,46 @@
             <small>{{ (currentTicket.canDelete ? 'common.available' : 'common.unavailable') | translate }}</small>
           </div>
         </div>
+
+        @if (actionError()) {
+          <p class="form-error" role="alert">{{ actionError() }}</p>
+        }
+
+        @if (currentTicket.canAssign) {
+          <div class="ticket-action-section">
+            <h3>{{ 'ticketDetail.assignment' | translate }}</h3>
+            <div class="assignment-control">
+              <label for="ticket-assignee">{{ 'ticketDetail.assignedTo' | translate }}</label>
+              <select id="ticket-assignee" [value]="selectedAssigneeId() ?? ''" (change)="selectAssignee($event)">
+                <option value="">{{ 'common.unassigned' | translate }}</option>
+                @for (user of assignableUsers(); track trackAssignableUser($index, user)) {
+                  <option [value]="user.id">{{ userLabel(user) }}</option>
+                }
+              </select>
+            </div>
+            <button class="action-button" type="button" [disabled]="isAssigning()" (click)="assignTicket()">
+              {{ 'ticketDetail.saveAssignment' | translate }}
+            </button>
+          </div>
+        }
+
+        @if (ticket()?.availableStatusTransitions?.length) {
+          <div class="ticket-action-section">
+            <h3>{{ 'ticketDetail.changeStatus' | translate }}</h3>
+            <div class="status-action-list">
+              @for (status of currentTicket.availableStatusTransitions; track status) {
+                <button
+                  class="row-action"
+                  type="button"
+                  [disabled]="isChangingStatus()"
+                  (click)="changeStatus(status)"
+                >
+                  Set {{ statusLabel(status) }}
+                </button>
+              }
+            </div>
+          </div>
+        }
       </aside>
     </section>
 

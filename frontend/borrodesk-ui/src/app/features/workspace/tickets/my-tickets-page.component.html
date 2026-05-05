@@ -4,25 +4,65 @@
       <p class="workspace-eyebrow">{{ 'myTickets.personalQueue' | translate }}</p>
       <h2>{{ 'myTickets.title' | translate }}</h2>
     </div>
-    <span class="status-badge">{{ 'myTickets.status' | translate }}</span>
+    <span class="status-badge">{{ 'common.totalCount' | translate: { count: totalCount() } }}</span>
   </section>
 
-  <section class="content-grid">
-    <article class="workspace-card">
-      <h3>{{ 'myTickets.dueSoon' | translate }}</h3>
-      <div class="compact-list">
-        <span>{{ 'myTickets.confirmWarrantyReplacement' | translate }}</span>
-        <span>{{ 'myTickets.reviewWorkstationAccess' | translate }}</span>
-        <span>{{ 'myTickets.updateInvoiceAttachment' | translate }}</span>
+  @if (errorMessage()) {
+    <p class="form-error" role="alert">{{ errorMessage() | translate }}</p>
+  }
+
+  <section class="workspace-card">
+    <div class="table-toolbar">
+      <strong>{{ 'myTickets.list' | translate }}</strong>
+      @if (isLoading()) {
+        <span class="loading-label">{{ 'myTickets.loading' | translate }}</span>
+      }
+    </div>
+
+    <div class="ticket-table ticket-list-table">
+      <div class="ticket-table-row table-header">
+        <span>ID</span>
+        <span>{{ 'tickets.subject' | translate }}</span>
+        <span>{{ 'tickets.status' | translate }}</span>
+        <span>{{ 'tickets.priority' | translate }}</span>
+        <span>{{ 'tickets.assignee' | translate }}</span>
+        <span>{{ 'tickets.created' | translate }}</span>
+        <span>{{ 'tickets.actions' | translate }}</span>
       </div>
-    </article>
-    <article class="workspace-card">
-      <h3>{{ 'myTickets.waiting' | translate }}</h3>
-      <div class="compact-list muted">
-        <span>{{ 'myTickets.managerApproval' | translate }}</span>
-        <span>{{ 'myTickets.customerScreenshot' | translate }}</span>
-        <span>{{ 'myTickets.vendorResponse' | translate }}</span>
-      </div>
-    </article>
+
+      @if (isLoading() && tickets().length === 0) {
+        <div class="table-empty">
+          <strong>{{ 'myTickets.loading' | translate }}</strong>
+          <span>{{ 'myTickets.fetchingLatest' | translate }}</span>
+        </div>
+      } @else if (tickets().length > 0) {
+        @for (ticket of tickets(); track trackTicket($index, ticket)) {
+          <div class="ticket-table-row">
+            <span>
+              <a class="table-link" [routerLink]="['/app/tickets', ticket.id]">#{{ ticket.id }}</a>
+            </span>
+            <span class="ticket-title-cell">
+              <a class="table-link" [routerLink]="['/app/tickets', ticket.id]">{{ ticket.title }}</a>
+            </span>
+            <span>
+              <mark [class]="statusClass(ticket.status)">{{ statusLabel(ticket.status) }}</mark>
+            </span>
+            <span>
+              <mark [class]="priorityClass(ticket.priority)">{{ priorityLabel(ticket.priority) }}</mark>
+            </span>
+            <span>{{ userLabel(ticket.assignedTo) }}</span>
+            <span>{{ ticket.createdAt | date: 'mediumDate' : undefined : i18n.dateLocale() }}</span>
+            <span class="row-actions">
+              <a class="row-action" [routerLink]="['/app/tickets', ticket.id]">{{ 'tickets.view' | translate }}</a>
+            </span>
+          </div>
+        }
+      } @else {
+        <div class="table-empty">
+          <strong>{{ 'tickets.noTickets' | translate }}</strong>
+          <span>{{ 'myTickets.noTicketsHelp' | translate }}</span>
+        </div>
+      }
+    </div>
   </section>
 </main>

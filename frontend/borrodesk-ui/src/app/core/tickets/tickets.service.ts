@@ -77,6 +77,14 @@ export interface UpdateTicketRequest {
   priority: TicketPriority;
 }
 
+export interface ChangeTicketStatusRequest {
+  status: TicketStatus;
+}
+
+export interface AssignTicketRequest {
+  assignedToUserId: number | null;
+}
+
 export interface CreateTicketCommentRequest {
   text: string;
 }
@@ -125,6 +133,18 @@ export class TicketsService {
     return this.http.put<TicketResponse>(`/api/tickets/${id}`, request);
   }
 
+  changeTicketStatus(id: number, request: ChangeTicketStatusRequest): Observable<TicketResponse> {
+    return this.http.patch<TicketResponse>(`/api/tickets/${id}/status`, request);
+  }
+
+  assignTicket(id: number, request: AssignTicketRequest): Observable<TicketResponse> {
+    return this.http.patch<TicketResponse>(`/api/tickets/${id}/assignment`, request);
+  }
+
+  getAssignableUsers(): Observable<TicketUserResponse[]> {
+    return this.http.get<TicketUserResponse[]>('/api/users/assignable');
+  }
+
   addTicketComment(id: number, request: CreateTicketCommentRequest): Observable<TicketCommentResponse> {
     return this.http.post<TicketCommentResponse>(`/api/tickets/${id}/comments`, request);
   }
@@ -141,6 +161,10 @@ export class TicketsService {
       params: new HttpParams().set('download', download),
       responseType: 'blob'
     });
+  }
+
+  deleteTicket(id: number): Observable<void> {
+    return this.http.delete<void>(`/api/tickets/${id}`);
   }
 
   private toHttpParams(query: TicketQuery): HttpParams {
