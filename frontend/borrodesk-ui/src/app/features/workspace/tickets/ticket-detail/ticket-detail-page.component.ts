@@ -196,7 +196,7 @@ export class TicketDetailPageComponent implements OnInit, OnDestroy {
       return;
     }
 
-    if (!confirm('Delete this ticket?')) {
+    if (!confirm(this.i18n.translate('ticketDetail.deleteConfirm'))) {
       return;
     }
 
