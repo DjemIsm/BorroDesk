@@ -118,7 +118,9 @@
                 </a>
               }
               @if (ticket.canAssign) {
-                <button class="row-action" type="button">{{ 'tickets.assign' | translate }}</button>
+                <a class="row-action" [routerLink]="['/app/tickets', ticket.id]">
+                  {{ 'tickets.assign' | translate }}
+                </a>
               }
             </span>
           </div>
