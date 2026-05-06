@@ -1,19 +1,31 @@
-# Build output
+# Backend build output
 bin/
 obj/
 .dotnet/
+
+# Uploaded/local files
 backend/BorroDesk.Api/uploads/
 
-# IDE and editor state
+# IDE/editor files
 .vs/
-.vscode/.vs/
+.vscode/
 
-# Frontend dependencies and generated output
+# Frontend dependencies and build output
 node_modules/
 dist/
 build/
+.angular/
+.cache/
+coverage/
 
-# Local environment files
+# Logs
+*.log
+
+# User/local config
+*.user
+*.suo
+
+# Environment files
 .env
 .env.*
 !.env.example
