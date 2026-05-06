@@ -16,6 +16,8 @@ public sealed class TicketQueryParameters
     [StringLength(200)]
     public string? Search { get; init; }
 
+    public TicketSortField SortBy { get; init; } = TicketSortField.ActivityAt;
+
     [Range(1, int.MaxValue)]
     public int PageNumber { get; init; } = 1;
 

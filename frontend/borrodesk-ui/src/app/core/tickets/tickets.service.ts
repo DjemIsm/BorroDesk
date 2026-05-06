@@ -17,6 +17,12 @@ export enum TicketPriority {
   Urgent = 4
 }
 
+export enum TicketSortField {
+  ActivityAt = 'ActivityAt',
+  UpdatedAt = 'UpdatedAt',
+  CreatedAt = 'CreatedAt'
+}
+
 export interface TicketUserResponse {
   id: number;
   userName: string | null;
@@ -105,6 +111,7 @@ export interface TicketQuery {
   assignedToUserId?: number;
   createdByUserId?: number;
   search?: string;
+  sortBy?: TicketSortField;
   pageNumber: number;
   pageSize: number;
 }
@@ -190,6 +197,10 @@ export class TicketsService {
 
     if (query.createdByUserId) {
       params = params.set('createdByUserId', query.createdByUserId);
+    }
+
+    if (query.sortBy) {
+      params = params.set('sortBy', query.sortBy);
     }
 
     return params;

@@ -729,7 +729,10 @@ a {
   gap: 10px;
 }
 
-.compact-list span {
+.compact-list > span,
+.compact-list > a {
+  display: grid;
+  gap: 4px;
   border: 1px solid #e0e7e4;
   border-radius: 8px;
   background: #fbfcfb;
@@ -737,41 +740,39 @@ a {
   padding: 12px;
 }
 
-.compact-list.muted span {
+.compact-list a:hover {
+  border-color: #b9d9d2;
+  background: #edf5f2;
+}
+
+.compact-list.muted > span {
   color: #66756f;
 }
 
-.coverage-bars {
-  display: grid;
-  gap: 12px;
-}
-
-.coverage-bars span {
-  display: grid;
-  gap: 8px;
-  color: #31433e;
-  font-weight: 700;
-}
-
-.coverage-bars span::after {
+.ticket-summary-list strong,
+.ticket-summary-list small {
   display: block;
-  width: var(--bar-size);
-  height: 10px;
-  border-radius: 999px;
-  background: #2f8578;
-  content: "";
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.coverage-bars span:nth-child(1)::after {
-  --bar-size: 82%;
+.ticket-summary-list strong {
+  color: #18211f;
 }
 
-.coverage-bars span:nth-child(2)::after {
-  --bar-size: 64%;
+.ticket-summary-list small {
+  color: #66756f;
+  font-size: 0.82rem;
 }
 
-.coverage-bars span:nth-child(3)::after {
-  --bar-size: 48%;
+.ticket-summary-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  color: #66756f;
+  font-size: 0.82rem;
 }
 
 .ticket-table {

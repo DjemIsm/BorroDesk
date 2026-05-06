@@ -123,11 +123,10 @@ public sealed class TicketService(
             ? 0
             : (int)Math.Ceiling(totalCount / (double)queryParameters.PageSize);
 
-        var tickets = await query
+        var tickets = await ApplySort(query
             .Include(ticket => ticket.CreatedByUser)
-            .Include(ticket => ticket.AssignedToUser)
-            .OrderByDescending(ticket => ticket.UpdatedAt ?? ticket.CreatedAt)
-            .ThenByDescending(ticket => ticket.Id)
+            .Include(ticket => ticket.AssignedToUser),
+            queryParameters.SortBy)
             .Skip((queryParameters.PageNumber - 1) * queryParameters.PageSize)
             .Take(queryParameters.PageSize)
             .ToListAsync(cancellationToken);
@@ -546,6 +545,22 @@ public sealed class TicketService(
                     || (ticket.AssignedToUser.Email != null && ticket.AssignedToUser.Email.Contains(search))));
     }
 
+    private static IOrderedQueryable<Ticket> ApplySort(IQueryable<Ticket> query, TicketSortField sortBy)
+    {
+        return sortBy switch
+        {
+            TicketSortField.CreatedAt => query
+                .OrderByDescending(ticket => ticket.CreatedAt)
+                .ThenByDescending(ticket => ticket.Id),
+            TicketSortField.UpdatedAt => query
+                .OrderByDescending(ticket => ticket.UpdatedAt)
+                .ThenByDescending(ticket => ticket.Id),
+            _ => query
+                .OrderByDescending(ticket => ticket.UpdatedAt ?? ticket.CreatedAt)
+                .ThenByDescending(ticket => ticket.Id)
+        };
+    }
+
     private async Task<Ticket?> FindTicketWithUsersAsync(
         int id,
         bool trackChanges,
@@ -589,6 +604,11 @@ public sealed class TicketService(
         if (queryParameters.Priority.HasValue && !IsDefined(queryParameters.Priority.Value))
         {
             return $"Unsupported ticket priority '{queryParameters.Priority.Value}'.";
+        }
+
+        if (!IsDefined(queryParameters.SortBy))
+        {
+            return $"Unsupported ticket sort field '{queryParameters.SortBy}'.";
         }
 
         if (queryParameters.PageNumber < 1)

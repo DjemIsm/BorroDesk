@@ -5,7 +5,7 @@
       <h2>{{ 'dashboard.dashboard' | translate }}</h2>
     </div>
     <span class="status-badge">
-      {{ (isLoading() ? 'dashboard.loadingMetrics' : 'dashboard.live') | translate }}
+      {{ (isLoading() ? 'dashboard.loadingMetrics' : errorMessage() ? 'common.unavailable' : 'dashboard.live') | translate }}
     </span>
   </section>
 
@@ -13,58 +13,127 @@
     <p class="form-error" role="alert">{{ errorMessage() | translate }}</p>
   }
 
-  <section class="metric-grid" [attr.aria-label]="'dashboard.metricsAria' | translate" [attr.aria-busy]="isLoading()">
-    <a class="metric-tile" routerLink="/app/tickets" [queryParams]="{ status: ticketStatus.Open }">
-      <span>{{ 'dashboard.openTickets' | translate }}</span>
-      <strong>
-        @if (isLoading()) {
-          ...
-        } @else {
-          {{ openTicketsCount() }}
-        }
-      </strong>
-      <small>{{ 'dashboard.acrossActiveQueues' | translate }}</small>
-    </a>
-    <a class="metric-tile" routerLink="/app/tickets" [queryParams]="{ status: ticketStatus.InProgress }">
-      <span>{{ 'dashboard.inProgressTickets' | translate }}</span>
-      <strong>
-        @if (isLoading()) {
-          ...
-        } @else {
-          {{ inProgressTicketsCount() }}
-        }
-      </strong>
-      <small>{{ 'dashboard.needsFollowUp' | translate }}</small>
-    </a>
-    <a class="metric-tile" routerLink="/app/tickets" [queryParams]="{ priority: ticketPriority.High }">
-      <span>{{ 'dashboard.highPriorityTickets' | translate }}</span>
-      <strong>
-        @if (isLoading()) {
-          ...
-        } @else {
-          {{ highPriorityTicketsCount() }}
-        }
-      </strong>
-      <small>{{ 'dashboard.priorityQueue' | translate }}</small>
-    </a>
-  </section>
+  @if (!errorMessage() || isLoading()) {
+    <section class="metric-grid" [attr.aria-label]="'dashboard.metricsAria' | translate" [attr.aria-busy]="isLoading()">
+      <a class="metric-tile" routerLink="/app/tickets" [queryParams]="{ status: ticketStatus.Open }">
+        <span>{{ 'dashboard.openTickets' | translate }}</span>
+        <strong>
+          @if (isLoading()) {
+            ...
+          } @else {
+            {{ openTicketsCount() }}
+          }
+        </strong>
+        <small>{{ 'dashboard.acrossActiveQueues' | translate }}</small>
+      </a>
+      <a class="metric-tile" routerLink="/app/tickets" [queryParams]="{ status: ticketStatus.InProgress }">
+        <span>{{ 'dashboard.inProgressTickets' | translate }}</span>
+        <strong>
+          @if (isLoading()) {
+            ...
+          } @else {
+            {{ inProgressTicketsCount() }}
+          }
+        </strong>
+        <small>{{ 'dashboard.needsFollowUp' | translate }}</small>
+      </a>
+      <a class="metric-tile" routerLink="/app/tickets" [queryParams]="{ priority: ticketPriority.High }">
+        <span>{{ 'dashboard.highPriorityTickets' | translate }}</span>
+        <strong>
+          @if (isLoading()) {
+            ...
+          } @else {
+            {{ highPriorityTicketsCount() }}
+          }
+        </strong>
+        <small>{{ 'dashboard.priorityQueue' | translate }}</small>
+      </a>
+    </section>
 
-  <section class="content-grid">
-    <article class="workspace-card">
-      <h3>{{ 'dashboard.priorityQueue' | translate }}</h3>
-      <div class="compact-list">
-        <span>{{ 'login.paymentReceiptMissing' | translate }}</span>
-        <span>{{ 'dashboard.vendorOnboardingBlocked' | translate }}</span>
-        <span>{{ 'dashboard.accountAccessReview' | translate }}</span>
-      </div>
-    </article>
-    <article class="workspace-card">
-      <h3>{{ 'dashboard.teamCoverage' | translate }}</h3>
-      <div class="coverage-bars">
-        <span>{{ 'dashboard.support' | translate }}</span>
-        <span>{{ 'dashboard.finance' | translate }}</span>
-        <span>{{ 'dashboard.security' | translate }}</span>
-      </div>
-    </article>
-  </section>
+    <section class="content-grid">
+      <article class="workspace-card">
+        <h3>{{ 'dashboard.priorityQueue' | translate }}</h3>
+        @if (isLoading() && highPriorityTickets().length === 0) {
+          <div class="empty-inline">
+            <strong>{{ 'tickets.loading' | translate }}</strong>
+            <span>{{ 'tickets.fetchingLatest' | translate }}</span>
+          </div>
+        } @else if (highPriorityTickets().length > 0) {
+          <div class="compact-list ticket-summary-list">
+            @for (ticket of highPriorityTickets(); track trackTicket($index, ticket)) {
+              <a [routerLink]="['/app/tickets', ticket.id]">
+                <strong>#{{ ticket.id }} {{ ticket.title }}</strong>
+                <small>{{ userLabel(ticket.assignedTo) }}</small>
+              </a>
+            }
+          </div>
+        } @else {
+          <div class="empty-inline">
+            <strong>{{ 'dashboard.noPriorityTickets' | translate }}</strong>
+            <span>{{ 'dashboard.noPriorityTicketsHelp' | translate }}</span>
+          </div>
+        }
+      </article>
+      <article class="workspace-card">
+        <h3>{{ 'dashboard.newestOpenTickets' | translate }}</h3>
+        @if (isLoading() && newestOpenTickets().length === 0) {
+          <div class="empty-inline">
+            <strong>{{ 'tickets.loading' | translate }}</strong>
+            <span>{{ 'tickets.fetchingLatest' | translate }}</span>
+          </div>
+        } @else if (newestOpenTickets().length > 0) {
+          <div class="compact-list ticket-summary-list">
+            @for (ticket of newestOpenTickets(); track trackTicket($index, ticket)) {
+              <a [routerLink]="['/app/tickets', ticket.id]">
+                <strong>{{ ticket.title }}</strong>
+                <span class="ticket-summary-meta">
+                  <mark [class]="priorityClass(ticket.priority)">{{ priorityLabel(ticket.priority) }}</mark>
+                  <span>{{ ticket.createdAt | date: 'mediumDate' : undefined : i18n.dateLocale() }}</span>
+                  <mark [class]="statusClass(ticket.status)">{{ statusLabel(ticket.status) }}</mark>
+                  <span class="table-link">{{ 'tickets.view' | translate }}</span>
+                </span>
+              </a>
+            }
+          </div>
+        } @else {
+          <div class="empty-inline">
+            <strong>{{ 'dashboard.noOpenTickets' | translate }}</strong>
+            <span>{{ 'dashboard.noOpenTicketsHelp' | translate }}</span>
+          </div>
+        }
+      </article>
+      <article class="workspace-card">
+        <h3>{{ 'dashboard.recentlyUpdatedTickets' | translate }}</h3>
+        @if (isLoading() && recentlyUpdatedTickets().length === 0) {
+          <div class="empty-inline">
+            <strong>{{ 'tickets.loading' | translate }}</strong>
+            <span>{{ 'tickets.fetchingLatest' | translate }}</span>
+          </div>
+        } @else if (recentlyUpdatedTickets().length > 0) {
+          <div class="compact-list ticket-summary-list">
+            @for (ticket of recentlyUpdatedTickets(); track trackTicket($index, ticket)) {
+              <a [routerLink]="['/app/tickets', ticket.id]">
+                <strong>{{ ticket.title }}</strong>
+                <span class="ticket-summary-meta">
+                  <mark [class]="statusClass(ticket.status)">{{ statusLabel(ticket.status) }}</mark>
+                  <mark [class]="priorityClass(ticket.priority)">{{ priorityLabel(ticket.priority) }}</mark>
+                  @if (ticket.updatedAt) {
+                    <span>{{ ticket.updatedAt | date: 'mediumDate' : undefined : i18n.dateLocale() }}</span>
+                  } @else {
+                    <span>{{ 'common.unavailable' | translate }}</span>
+                  }
+                  <span class="table-link">{{ 'tickets.view' | translate }}</span>
+                </span>
+              </a>
+            }
+          </div>
+        } @else {
+          <div class="empty-inline">
+            <strong>{{ 'dashboard.noRecentlyUpdatedTickets' | translate }}</strong>
+            <span>{{ 'dashboard.noRecentlyUpdatedTicketsHelp' | translate }}</span>
+          </div>
+        }
+      </article>
+    </section>
+  }
 </main>
