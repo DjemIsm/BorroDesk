@@ -194,3 +194,5 @@ static async Task WriteProblemDetailsAsync(HttpContext httpContext, int statusCo
     httpContext.Response.ContentType = "application/problem+json";
     await httpContext.Response.WriteAsync(JsonSerializer.Serialize(problemDetails));
 }
+
+public partial class Program;

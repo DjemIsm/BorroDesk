@@ -1,0 +1,15 @@
+<Project>
+  <Target Name="Restore">
+    <MSBuild
+      Projects="$(SolutionDir)backend/BorroDesk.Api.Tests/BorroDesk.Api.Tests.csproj"
+      Targets="Restore"
+      Properties="Configuration=$(Configuration); Platform=AnyCPU;BuildingSolutionFile=true; SolutionDir=$(SolutionDir); SolutionExt=$(SolutionExt); SolutionFileName=$(SolutionFileName); SolutionName=$(SolutionName); SolutionPath=$(SolutionPath)" />
+  </Target>
+
+  <Target Name="VSTest">
+    <MSBuild
+      Projects="$(SolutionDir)backend/BorroDesk.Api.Tests/BorroDesk.Api.Tests.csproj"
+      Targets="VSTest"
+      Properties="Configuration=$(Configuration); Platform=AnyCPU;BuildingSolutionFile=true; SolutionDir=$(SolutionDir); SolutionExt=$(SolutionExt); SolutionFileName=$(SolutionFileName); SolutionName=$(SolutionName); SolutionPath=$(SolutionPath)" />
+  </Target>
+</Project>

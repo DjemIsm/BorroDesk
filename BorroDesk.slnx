@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/backend/">
+    <Project Path="backend/BorroDesk.Api.Tests/BorroDesk.Api.Tests.csproj" />
     <Project Path="backend/BorroDesk.Api/BorroDesk.Api.csproj" />
   </Folder>
 </Solution>
