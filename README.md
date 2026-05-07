@@ -259,7 +259,7 @@ Main backend areas:
 
 ## Development Notes
 
-This project focuses on realistic business application features instead of simple tutorial-style CRUD examples.
+This project focuses on realistic business application features.
 
 Implemented concepts include:
 
