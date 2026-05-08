@@ -58,7 +58,6 @@ This project was built as a portfolio project to demonstrate full-stack developm
 
 ## Screenshots
 
-> Screenshots can be added later in the `docs/screenshots` folder.
 
 ### Dashboard
 
