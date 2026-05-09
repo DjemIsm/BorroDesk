@@ -22,6 +22,20 @@ builder.Services.AddDbContext<BorroDeskDbContext>(options =>
 
 builder.Services.AddAuthorization();
 
+var allowedOrigins = builder.Configuration
+    .GetSection("Cors:AllowedOrigins")
+    .Get<string[]>() ?? [];
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("Frontend", policy =>
+    {
+        policy.WithOrigins(allowedOrigins)
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
+
 builder.Services
     .AddIdentityApiEndpoints<User>(options =>
     {
@@ -166,10 +180,19 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseCors("Frontend");
+
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapGet("/health", () => Results.Ok(new
+{
+    status  = "ok",
+    app = "Borrodesk.Api",
+    timestamp = DateTimeOffset.UtcNow
+}));
 
 app.Run();
 
