@@ -171,6 +171,7 @@ if (app.Environment.IsDevelopment())
 {
     await ApplyDatabaseMigrationsAsync(app.Services);
     await ApplicationDataSeeder.SeedDevelopmentAsync(app.Services);
+
     app.MapOpenApi();
     app.MapScalarApiReference(options =>
     {
@@ -179,6 +180,17 @@ if (app.Environment.IsDevelopment())
             .AddPreferredSecuritySchemes([JwtBearerDefaults.AuthenticationScheme])
             .AddHttpAuthentication(JwtBearerDefaults.AuthenticationScheme, _ => { });
     });
+}
+
+if (app.Environment.IsProduction())
+{
+    await ApplyDatabaseMigrationsAsync(app.Services);
+
+    var seedDemoData = app.Configuration.GetValue<bool>("Seed:DemoData");
+    if (seedDemoData)
+    {
+        await ApplicationDataSeeder.SeedDevelopmentAsync(app.Services);
+    }
 }
 
 app.UseHttpsRedirection();
