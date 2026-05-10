@@ -1,0 +1,53 @@
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: borrodesk-sqlserver
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Your_strong_password123!"
+    ports:
+      - "1433:1433"
+    volumes:
+      - borrodesk-sql-data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'Your_strong_password123!' -C -Q 'SELECT 1' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build:
+      context: ./backend/BorroDesk.Api
+      dockerfile: Dockerfile
+    container_name: borrodesk-api
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      ASPNETCORE_URLS: "http://+:8080"
+      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=BorroDesk;User Id=sa;Password=Your_strong_password123!;TrustServerCertificate=True;Encrypt=False"
+      Jwt__Issuer: "BorroDesk"
+      Jwt__Audience: "BorroDesk.Client"
+      Jwt__SigningKey: "CHANGE_ME_LOCAL_DEVELOPMENT_SECRET_32_CHARS_MIN"
+      SeedUsers__Admin__Enabled: "true"
+      SeedUsers__Admin__Email: "admin@borrodesk.local"
+      SeedUsers__Admin__UserName: "admin"
+      SeedUsers__Admin__Password: "Admin123!"
+      Cors__AllowedOrigins__0: "http://localhost:4200"
+      Cors__AllowedOrigins__1: "http://localhost:8081"
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build:
+      context: ./frontend/borrodesk-ui
+      dockerfile: Dockerfile
+    container_name: borrodesk-frontend
+    depends_on:
+      - api
+    ports:
+      - "8081:80"
+
+volumes:
+  borrodesk-sql-data:

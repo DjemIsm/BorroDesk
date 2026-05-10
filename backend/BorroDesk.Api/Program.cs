@@ -18,7 +18,9 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddDbContext<BorroDeskDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        sqlOptions => sqlOptions.EnableRetryOnFailure()));
 
 builder.Services.AddAuthorization();
 
@@ -167,6 +169,7 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
+    await ApplyDatabaseMigrationsAsync(app.Services);
     await ApplicationDataSeeder.SeedDevelopmentAsync(app.Services);
     app.MapOpenApi();
     app.MapScalarApiReference(options =>
@@ -216,6 +219,13 @@ static async Task WriteProblemDetailsAsync(HttpContext httpContext, int statusCo
     httpContext.Response.StatusCode = statusCode;
     httpContext.Response.ContentType = "application/problem+json";
     await httpContext.Response.WriteAsync(JsonSerializer.Serialize(problemDetails));
+}
+
+static async Task ApplyDatabaseMigrationsAsync(IServiceProvider services)
+{
+    using var scope = services.CreateScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<BorroDeskDbContext>();
+    await dbContext.Database.MigrateAsync();
 }
 
 public partial class Program;
