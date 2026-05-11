@@ -1,10 +1,23 @@
 # BorroDesk
 
+![.NET](https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet&logoColor=white)
+![Angular](https://img.shields.io/badge/Angular-21-DD0031?logo=angular&logoColor=white)
+![SQL Server](https://img.shields.io/badge/SQL%20Server-2022-CC2927?logo=microsoftsqlserver&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-green)
+
 BorroDesk is an internal IT ticket management system built with **ASP.NET Core**, **Angular**, and **SQL Server**.
 
 The application allows employees to report IT issues, while support agents and administrators can manage, assign, comment on, and resolve tickets.
 
-This project was built as a portfolio project to demonstrate full-stack development with .NET and Angular.
+This project was built as a portfolio project to demonstrate full-stack development with .NET, Angular, SQL Server, authentication, authorization, testing, Docker, and deployment.
+
+---
+
+## Live Demo
+
+Frontend: https://borrodesk-ui.onrender.com  
+Backend: https://borrodesk.onrender.com
 
 ---
 
@@ -31,6 +44,8 @@ This project was built as a portfolio project to demonstrate full-stack developm
 - Admin user management
 - Dashboard with ticket overview
 - Backend integration tests
+- Docker-based local development
+- Render deployment
 
 ---
 
@@ -54,10 +69,60 @@ This project was built as a portfolio project to demonstrate full-stack developm
 - Angular HTTP Client
 - Reactive Forms
 
+### DevOps
+
+- Docker
+- Docker Compose
+- Render
+
+---
+
+## Architecture
+
+```text
+┌────────────────────────┐
+│   Angular Frontend     │
+│   borrodesk-ui         │
+└───────────┬────────────┘
+            │
+            │ HTTP / REST
+            ▼
+┌────────────────────────┐
+│   ASP.NET Core API     │
+│   BorroDesk.Api        │
+└───────────┬────────────┘
+            │
+            │ Entity Framework Core
+            ▼
+┌────────────────────────┐
+│      SQL Server        │
+│      BorroDesk DB      │
+└────────────────────────┘
+```
+
+### Local Docker Architecture
+
+```text
+Browser
+  │
+  ├── http://localhost:8081
+  │       │
+  │       ▼
+  │   Angular Frontend Container
+  │
+  └── http://localhost:8080
+          │
+          ▼
+      ASP.NET Core API Container
+          │
+          ▼
+      SQL Server Container
+      localhost:1433
+```
+
 ---
 
 ## Screenshots
-
 
 ### Dashboard
 
@@ -88,6 +153,7 @@ BorroDesk/
 │   └── borrodesk-ui/
 ├── docs/
 │   └── screenshots/
+├── docker-compose.yml
 └── README.md
 ```
 
@@ -104,10 +170,79 @@ Make sure the following tools are installed:
 - npm
 - SQL Server
 - Angular CLI
+- Docker
+- Docker Compose
 
 ---
 
-## Backend Setup
+## Run with Docker
+
+From the repository root, run:
+
+```bash
+docker compose up
+```
+
+This starts the following services:
+
+```text
+Frontend: http://localhost:8081
+Backend:  http://localhost:8080
+SQL:      localhost:1433
+```
+
+To stop the containers:
+
+```bash
+docker compose down
+```
+
+To stop the containers and remove the database volume:
+
+```bash
+docker compose down -v
+```
+
+---
+
+## Docker Services
+
+The Docker setup contains three services:
+
+```text
+sqlserver
+api
+frontend
+```
+
+### SQL Server
+
+```text
+Container: borrodesk-sqlserver
+Image:     mcr.microsoft.com/mssql/server:2022-latest
+Port:      1433
+Database:  BorroDesk
+```
+
+### API
+
+```text
+Container: borrodesk-api
+Port:      8080
+URL:       http://localhost:8080
+```
+
+### Frontend
+
+```text
+Container: borrodesk-frontend
+Port:      8081
+URL:       http://localhost:8081
+```
+
+---
+
+## Backend Setup Without Docker
 
 Go to the backend project:
 
@@ -141,7 +276,7 @@ https://localhost:7047
 
 ---
 
-## Frontend Setup
+## Frontend Setup Without Docker
 
 Go to the frontend project:
 
@@ -197,7 +332,14 @@ Backend tests can be executed with:
 dotnet test
 ```
 
-The test project includes integration tests for authentication, authorization, ticket permissions, comments, uploads, and admin functionality.
+The test project includes integration tests for:
+
+- Authentication
+- Authorization
+- Ticket permissions
+- Comments
+- Uploads
+- Admin functionality
 
 ---
 
@@ -249,10 +391,44 @@ Main backend areas:
 
 ---
 
+## Deployment
+
+The project is deployed on Render.
+
+Frontend: https://borrodesk-ui.onrender.com  
+Backend: https://borrodesk.onrender.com
+
+The frontend and backend are deployed as separate services.
+
+---
+
+## Environment Variables
+
+The API uses environment variables for production configuration.
+
+Important variables include:
+
+```text
+ASPNETCORE_ENVIRONMENT
+ASPNETCORE_URLS
+ConnectionStrings__DefaultConnection
+Jwt__Issuer
+Jwt__Audience
+Jwt__SigningKey
+Cors__AllowedOrigins__0
+```
+
+For local Docker development, these values are configured in `docker-compose.yml`.
+
+---
+
 ## Security Notes
 
 - Authentication is handled with JWT.
 - Authorization is role-based.
+- Demo accounts are intended for development and portfolio review only.
+- Production secrets should be configured through environment variables.
+- Local Docker passwords and JWT secrets should not be reused in production.
 
 ---
 
@@ -270,11 +446,11 @@ Implemented concepts include:
 - Integration testing
 - Angular routing and guards
 - API communication through Angular services
+- Docker-based local development
+- Deployment preparation for Render
 
 ---
 
 ## License
 
 This project is licensed under the MIT License.
-
----
